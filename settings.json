@@ -1,8 +1,14 @@
 {
 
     "directory":{
-        "Data":"Data/"
-        
+        "Data":"Data/", 
+        "Indiv_Data":"Data/Individual_Data/"
+
+    },
+    
+    "file":{
+        "HLA_Data":"Data/HLA_data.csv",
+        "covars":"Data/patList_LGI1.txt"
     }
 
 }
