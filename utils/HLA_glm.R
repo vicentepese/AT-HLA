@@ -1,3 +1,19 @@
+## ---------------------------
+##
+## Name: HLA_analysis.R
+##
+## Desciption: Given a dataset of HLA calls, computes a Chi2 
+##    for each locus and allele between cases and controls.
+##
+## Author: Vicente Peris Sempere
+##
+## Year: 2021
+##
+## Copyright (c) Vicente Peris Sempere, 2021
+## Email: vipese@stanford.edu
+##
+## ---------------------------
+
 # Import libraries
 library(jsonlite)
 library(tidyverse)
@@ -11,11 +27,12 @@ library(parallel)
 library(corrplot)
 library(randomForest)
 library(xlsx)
+library(TreeBH)
 
 ########### INITIALIZATION ############
 
 # Set working directory
-setwd("~/Documents/Alzheimer-Disease")
+setwd("~/Documents/HLA_association_pipeline")
 
 # Import settings
 settings <- jsonlite::read_json("settings.json")
@@ -23,20 +40,35 @@ settings <- jsonlite::read_json("settings.json")
 # Create comand
 `%notin%` <- Negate(`%in%`)
 
-# Import HLA calls and covariates
-if(settings$dataset == "Stanford"){
-  HLA.df <- read.csv(settings$file$HLA_df)
-  covars.df <- read.csv(settings$file$HLA_covars_filt)
-  covars.df$pheno <- covars.df$pheno -1
-  covars.df$sex <- covars.df$sex -1
-} else if (settings$dataset == "UKB"){
-  HLA.df <- read.csv(settings$file$HLA_df_UKB)
-  covars.df <- read.csv(settings$file$HLA_covars_UKB)
-  covars.df$pheno <- covars.df$pheno 
+# Import HLA calls, covariates 
+HLA.df <- read.csv(settings$file$HLA_Data)
+covars.df <- read.csv(settings$file$covars)
+probs.df <- read.csv(settings$file$probs)
+
+# Read options
+prob_thr <- settings$prob_thr
+freq_thr <- settings$freq_thr*100
+alleles2exclude <- settings$allele2exclude
+
+# Filter out the alleles to exclude 
+A2E <- data.table()
+for (allele in alleles2exclude){
+  
+  # Parse locus and allele
+  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  
+  # Filter HLA calls 
+  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
   
 }
 
+# Parse HLA calls for which there is a phenotype 
+HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
+# Delete files to allow output to be written
+file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
+file.remove(file.names)
 
 ########### ONE HOT ENCODING FUNCTIONS ###############
 
