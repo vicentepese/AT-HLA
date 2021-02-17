@@ -2,13 +2,13 @@
 
     "directory":{
         "Data":"Data/", 
-        "Indiv_Data":"Data/Individual_Data/"
-
+        "Indiv_Data":"Data/Individual_Data/",
+        "Output_Chi":"Outputs/Chi2/"
     },
     
     "file":{
-        "HLA_Data":"Data/HLA_data.csv",
-        "covars":"Data/patList_LGI1.txt"
+        "HLA_Data":"Data/HLA_LGI1.csv",
+        "covars":"Resources/covars.txt"
     }
 
 }
