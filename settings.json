@@ -3,12 +3,21 @@
     "directory":{
         "Data":"Data/", 
         "Indiv_Data":"Data/Individual_Data/",
-        "Output_Chi":"Outputs/Chi2/"
+        "Outputs":"Outputs/"
     },
-    
+
+    "Output":{
+        "Chi2": "Outputs/Chi2/"
+    },
+
     "file":{
-        "HLA_Data":"Data/HLA_LGI1.csv",
-        "covars":"Resources/covars.txt"
-    }
+        "HLA_Data":"Data/HLA_df.csv",
+        "covars":"Resources/covars.csv",
+        "probs":"Resources/probs.csv"
+    },
+
+    "prob_thr":0.3,
+    "freq_thr":0.05,
+    "allele2exclude":[] 
 
 }

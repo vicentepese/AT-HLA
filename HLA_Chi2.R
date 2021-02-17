@@ -41,12 +41,35 @@ settings <- jsonlite::read_json("settings.json")
 # Create comand
 `%notin%` <- Negate(`%in%`)
 
-# Import HLA calls and covariates
+# Import HLA calls, covariates 
 HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
+probs.df <- read.csv(settings$file$probs)
 
-# Filter HLA 
+# Read options
+prob_thr <- settings$prob_thr
+freq_thr <- settings$freq_thr*100
+alleles2exclude <- settings$allele2exclude
+
+# Filter out the alleles to exclude 
+A2E <- data.table()
+for (allele in alleles2exclude){
+  
+  # Parse locus and allele
+  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  
+  # Filter HLA calls 
+  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+  
+}
+
+# Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
+
+# Delete files to allow output to be written
+file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
+file.remove(file.names)
 
 
 ############ COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ############
@@ -207,10 +230,15 @@ for (locus in loci){
   
   print(paste0("Current locus: ", locus))
   
+  # Filter out subjects with imputation probability threshold
+  probs.df_filt <- probs.df %>% filter(get(paste0("prob.", locus)) > prob_thr)
+  data.cases.filt <- data.cases %>% filter(sample.id %in% probs.df_filt$sample.id)
+  data.controls.filt <- data.controls %>% filter(sample.id %in% probs.df_filt$sample.id)
+  
   # Compute allele and carrier counts and frequencies
-  ACFREQ.cases <- computeACFREQ(data.cases, locus, 'case');
+  ACFREQ.cases <- computeACFREQ(data.cases.filt, locus, 'case');
   totalCases <-unique(ACFREQ.cases$alleleTotalCase); carrierCases <- unique(ACFREQ.cases$carrierTotalCase)
-  ACFREQ.controls <- computeACFREQ(data.controls, locus, 'control');
+  ACFREQ.controls <- computeACFREQ(data.controls.filt, locus, 'control');
   totalControls <-unique(ACFREQ.controls$alleleTotalControl); carrierControls <- unique(ACFREQ.controls$carrierTotalControl)
   
   # Merge and clean 
@@ -232,10 +260,28 @@ for (locus in loci){
                             ACFREQ.df[,c(1,which(grepl(paste(c('A0','A1','A2', 'carrier'), collapse = '|'), colnames(ACFREQ.df))))],
                             by = 'allele')
   
+  # Filter out low frequencies 
+  HLA.alleles.df <- HLA.alleles.df %>% filter(alleleFreqCase > freq_thr | alleleFreqControl > freq_thr)
+  HLA.carriers.df <- HLA.carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
+  
+  # Apply p-value correction
+  HLA.alleles.df <- add_column(HLA.alleles.df,
+                               FishersAllelePVAL_CORR = p.adjust(p = HLA.alleles.df$FishersAllelePVAL, method = "BY"),
+                               .after = "FishersAllelePVAL")
+  HLA.alleles.df <- add_column(HLA.alleles.df,
+                               ChiAllelePVAL_CORR = p.adjust(p = HLA.alleles.df$ChiAllelePVAL, method = "BY"),
+                               .after = "ChiAllelePVAL")
+  HLA.carriers.df <- add_column(HLA.carriers.df,
+                               FishersCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df$FishersCarrierPVAL, method = "BY"),
+                               .after = "FishersCarrierPVAL")
+  HLA.carriers.df <- add_column(HLA.carriers.df,
+                                ChiCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df$ChiCarrierPVAL, method = "BY"),
+                                .after = "ChiCarrierPVAL")
+  
   # Write 
-  write.xlsx(x = HLA.alleles.df, file = paste0(settings$directory$Output_Chi, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.alleles.df, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
-  write.xlsx(x = HLA.carriers.df, file = paste0(settings$directory$Output_Chi, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.carriers.df, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
