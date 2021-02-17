@@ -27,7 +27,6 @@ library(parallel)
 library(corrplot)
 library(randomForest)
 library(xlsx)
-library(TreeBH)
 
 ########### INITIALIZATION ############
 
@@ -49,19 +48,6 @@ probs.df <- read.csv(settings$file$probs)
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
 alleles2exclude <- settings$allele2exclude
-
-# Filter out the alleles to exclude 
-A2E <- data.table()
-for (allele in alleles2exclude){
-  
-  # Parse locus and allele
-  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
-  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-  
-  # Filter HLA calls 
-  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
-  
-}
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)

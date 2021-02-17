@@ -51,7 +51,6 @@ freq_thr <- settings$freq_thr*100
 alleles2exclude <- settings$allele2exclude
 
 # Filter out the alleles to exclude 
-A2E <- data.table()
 for (allele in alleles2exclude){
   
   # Parse locus and allele
