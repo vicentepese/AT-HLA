@@ -1,9 +1,9 @@
 ## ---------------------------
 ##
-## Name: HLA_analysis.R
+## Name: HLA_glm.R
 ##
-## Desciption: Given a dataset of HLA calls, computes a Chi2 
-##    for each locus and allele between cases and controls.
+## Desciption: Given a dataset of HLA calls, it fits GLM controlling
+##                  for PCs.
 ##
 ## Author: Vicente Peris Sempere
 ##
