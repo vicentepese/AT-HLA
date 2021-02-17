@@ -59,6 +59,9 @@ freq_thr <- settings$freq_thr*100
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
+# Append pheno to HLA calls 
+HLA.df <- merge(HLA.df, covars.df[,c("sample.id", "pheno")], by = "sample.id")
+
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$AA, full.names = TRUE)
 file.remove(file.names)
@@ -66,11 +69,8 @@ file.remove(file.names)
 # Import amino acid alignment 
 AA_alignment <- read.table(settings$file$AA_alignment, header = TRUE, sep = ',')
 
-# Remove negative positions 
-full_prot = FALSE
-if (!full_prot){
-  AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
-}
+# Convert from full protein to mature protein indexing
+AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
 
 
 ########## EXTRA FUNCTIONS ############
@@ -122,50 +122,22 @@ carrierCount = function(settings, data){
   
 }
 
-
-countAA2control = function(settings, data, AA_alignment){
-  
-  # Get locus, position and AA to control 
-  AA2control <- settings$AA2control %>% strsplit('_') %>% unlist()
-  L2control <- AA2control[1]; posControl <- AA2control[2]; AAcontrol <- AA2control[3]
-  c(L2controlA1, L2controlA2) %<-% c(paste0('HLA',L2control,'_A1'), paste0('HLA',L2control,'_A2'))
-  
-  # Get sequences
-  AA2control_locus <- AA_alignment %>% filter(locus == AA2control[1])
-  
-  # Get alleles 
-  allelesAA.OG <- AA2control_locus %>% apply(MARGIN = 1, function(x, posControl, AAcontrol)
-    if (substr(x[3],posControl,posControl) == AAcontrol) {return(x[2])}, posControl, AAcontrol) %>% unlist()
-  allelesAA <- allelesAA.OG %>% lapply(function(x) strsplit(x, split='\\*') %>% unlist() %>% 
-                                         .[2] %>% strsplit(split=':') %>% unlist() %>% .[1:2] %>% paste(collapse=':')) %>% unlist()
-  
-  # Get data and count cases and controls
-  data.AA <- data %>% filter(get(L2controlA1) %in% allelesAA| get(L2controlA2) %in% allelesAA)
-  c(AA2cntrl.cases, AA2cntrl.controls) %<-% c(data.AA$Dx %>% table() %>% .['1'], data.AA$Dx %>% table() %>% .['0']);
-  
-  return(c(AA2cntrl.cases, AA2cntrl.controls))
-}
-
-
 ########## AMINO ACID ANALYSIS ##########
 
 # Get loci, number of cases and controls
 loci <- unique(AA_alignment$locus)
 c(Ncases, Ncontrols) %<-% c(HLA.df$pheno %>% table %>%.['1'], HLA.df$pheno %>% table %>%.['0'])
 
-# Get AA2control counts
-if (settings$AA2control %>% length() > 0){
-  c(AA2cntrl.cases, AA2cntrl.controls) %<-% countAA2control(settings,HLA.df, AA_alignment)
-} else{
-  AA2cntrl.cases <- 0; AA2cntrl.controls <- 0
-}
-
 # Initialize loop
 AA.total <- c(); pval <- c(); OR <- c(); pos.total <- c(); locus <- c();
-cases.Count <- c(); controls.Count <- c(); alleles <- c()
+cases.Count <- c(); controls.Count <- c(); alleles <- c();
+cases.Freq <- c(); controls.Freq <- c();
 
 # For each locus 
 for (L in loci){
+  
+  # Verbose
+  print(paste0("Current locus: HLA-", L))
   
   # Get locus ID
   c(A1, A2) %<-% c(paste0(L,'.1'), paste0(L,'.2'))
@@ -186,6 +158,7 @@ for (L in loci){
     if (length(AAs) >1){
       
       for (AA in AAs){
+        
         # Get alleles with AAs
         allelesAA.OG <- AA_locus %>% apply(MARGIN = 1, function(x, pos, AA) if (substr(x[3],pos,pos) == AA) {return(x[2])}, pos, AA) %>% unlist()
         allelesAA <- allelesAA.OG %>% lapply(function(x) strsplit(x, split='\\*') %>% unlist() %>% 
@@ -194,9 +167,18 @@ for (L in loci){
         # Get data with such alleles
         data.AA <- HLA.df %>% filter(get(A1) %in% allelesAA| get(A2) %in% allelesAA)
         
-        # Get counts 
+        # Filter out subjects with low imputation probability
+        probs.df_filt <- probs.df %>% filter(get(paste0("prob.", L)) > prob_thr)
+        data.AA <- data.AA %>% filter(sample.id %in% probs.df_filt$sample.id)
+        
+        # Filter out subjects for with low imputation probability in the total count
+        HLA.df_filt <- HLA.df %>% filter(sample.id %in% probs.df_filt$sample.id)
+        c(Ncases, Ncontrols) %<-% c(HLA.df_filt$pheno %>% table %>%.['1'], HLA.df_filt$pheno %>% table %>%.['0'])
+        
+        # Get counts and frequencies
         c(AA.cases, AA.controls) %<-% c(data.AA$pheno %>% table() %>% .['1'], data.AA$pheno %>% table() %>% .['0']);
         if(is.na(AA.cases)) {AA.cases <- 0}; if(is.na(AA.controls)){AA.controls <- 0}
+        AA.casesFreq <- (AA.cases/Ncases)*100; AA.controlsFreq <- (AA.controls/Ncontrols)*100
         
         # Contingency table 
         cont.table <- matrix(c(AA.cases, AA.controls, 
@@ -210,6 +192,7 @@ for (L in loci){
         OR <- c(OR, (cont.table[1]*cont.table[4])/(cont.table[2]*cont.table[3])); 
         pos.total <- c(pos.total, pos); locus <- c(locus, L);
         cases.Count <- c(cases.Count, AA.cases); controls.Count <- c(controls.Count, AA.controls)
+        cases.Freq <- c(cases.Freq, AA.casesFreq); controls.Freq <- c(controls.Freq, AA.controlsFreq)
         alleles <- c(alleles, paste(allelesAA.OG, collapse = ', '))
       }
     }
@@ -217,9 +200,15 @@ for (L in loci){
 }
 
 # Create dataframe
-AA.analysis.results <- data.frame(locus= locus, AA = AA.total, pos = pos.total, Ncases = cases.Count, Ncontrol = controls.Count,
+AA.analysis.results <- data.frame(locus= locus, AA = AA.total, pos = pos.total, Ncases = cases.Count, FreqCases = cases.Freq, 
+                                  Ncontrol = controls.Count, FreqControls = controls.Freq,
                                   pval = pval, OR = OR, alleles = alleles)
+
+# Adjust p-value through FDR correction, append to results
+pval.corr <- p.adjust(p = AA.analysis.results$pval, method = "BY")
+AA.analysis.results <- add_column(AA.analysis.results, pval.corr, .after = "pval")
+  
 # Save dataframe 
-write.csv(AA.analysis.results, file = paste0(settings$folder$HLA_Output_AA, "HLA_AA.csv"), row.names = FALSE)
+write.csv(AA.analysis.results, file = paste0(settings$Output$AA, "AA_Chi2.csv"), row.names = FALSE)
 
 

@@ -21,6 +21,7 @@
 
     "prob_thr":0.3,
     "freq_thr":0.05,
-    "allele2control":[] 
+    "allele2control":[],
+    "AA2control":[]
 
 }
