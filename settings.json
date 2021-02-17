@@ -8,7 +8,8 @@
 
     "Output":{
         "Chi2": "Outputs/Chi2/",
-        "GLM": "Outputs/GLM/"
+        "GLM": "Outputs/GLM/",
+        "AA": "Outputs/AA/"
     },
 
     "file":{
