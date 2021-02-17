@@ -15,7 +15,8 @@
     "file":{
         "HLA_Data":"Data/HLA_df.csv",
         "covars":"Resources/covars.csv",
-        "probs":"Resources/probs.csv"
+        "probs":"Resources/probs.csv",
+        "AA_alignment": "Resources/AA"
     },
 
     "prob_thr":0.3,
