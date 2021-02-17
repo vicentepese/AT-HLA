@@ -14,7 +14,6 @@
 ##
 ## ---------------------------
 
-
 # Import libraries
 library(jsonlite)
 library(tidyverse)
