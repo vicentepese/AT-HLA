@@ -44,16 +44,21 @@ HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
+# Correct pheno for logistic regression 
+if (2 %in% covars.df$pheno %>% table() %>% names()){
+  covars.df$pheno <- covars.df$pheno - 1
+}
+
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
-alleles2exclude <- settings$allele2exclude
+alleles2control <- settings$allele2control %>% unlist()
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
 # Delete files to allow output to be written
-file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
+file.names <- list.files(settings$Output$GLM, full.names = TRUE)
 file.remove(file.names)
 
 ########### ONE HOT ENCODING FUNCTIONS ###############
@@ -61,26 +66,26 @@ file.remove(file.names)
 # HLA Parse function
 alleleFreqOHE=function(test_DF){
   test_DF = as.data.frame(test_DF)
-  sample.id.file = rep(test_DF[,1], 2)
+  sample.id = rep(test_DF[,1], 2)
   make_HLA = c(as.character(test_DF[,2]), as.character(test_DF[,3]))
-  make_DF = cbind.data.frame(sample.id.file, make_HLA)
+  make_DF = cbind.data.frame(sample.id, make_HLA)
   setDT(make_DF)
-  dcast_HLA = dcast(make_DF, sample.id.file~make_HLA, fun.aggregate = length)
-  dcast_HLA$sample.id.file = as.factor(dcast_HLA$sample.id.file)
+  dcast_HLA = dcast(make_DF, sample.id~make_HLA, fun.aggregate = length)
+  dcast_HLA$sample.id = as.factor(dcast_HLA$sample.id)
   return(setDF(dcast_HLA))
 }
 
 # HLA Parse function
 carrierFreqOHE=function(test_DF){
   test_DF = as.data.frame(test_DF)
-  sample.id.file = rep(test_DF[,1], 2)
+  sample.id = rep(test_DF[,1], 2)
   make_HLA = c(as.character(test_DF[,2]), as.character(test_DF[,3]))
-  make_DF = cbind.data.frame(sample.id.file, make_HLA)
+  make_DF = cbind.data.frame(sample.id, make_HLA)
   setDT(make_DF)
-  dcast_HLA = dcast(make_DF, sample.id.file~make_HLA, fun.aggregate = length)
-  dcast_vals <- dcast_HLA[,!c("sample.id.file")]; dcast_vals[dcast_vals > 1] <- 1
-  dcast_HLA <- cbind(data.frame(sample.id.file =dcast_HLA$sample.id.file), dcast_vals)
-  dcast_HLA$sample.id.file = as.factor(dcast_HLA$sample.id.file)
+  dcast_HLA = dcast(make_DF, sample.id~make_HLA, fun.aggregate = length)
+  dcast_vals <- dcast_HLA[,!c("sample.id")]; dcast_vals[dcast_vals > 1] <- 1
+  dcast_HLA <- cbind(data.frame(sample.id =dcast_HLA$sample.id), dcast_vals)
+  dcast_HLA$sample.id = as.factor(dcast_HLA$sample.id)
   return(setDF(dcast_HLA))
 }
 
@@ -89,13 +94,13 @@ carrierFreqOHE=function(test_DF){
 controlAllele = function(settings, locus, data.filt){
   
   # Alleles to control
-  As2control = settings$controlAlleles
+  As2control = settings$allele2control
   
   # Get unique loci 
   lociControl = lapply(As2control, function(x) x %>% strsplit('\\*') %>% unlist() %>% .[1]) %>% unlist() %>% unique() 
   
   # For each allele 
-  alleleControl.df = data.frame(sample.id.file = data.filt$sample.id.file)
+  alleleControl.df = data.frame(sample.id = data.filt$sample.id)
   for (A in As2control){
     
     # Get locus and allele 
@@ -108,6 +113,10 @@ controlAllele = function(settings, locus, data.filt){
     alleleControl.df[A] <- as.logical(c(data.filt[,c(allele1)] %>% as.character() == allele2control) + 
                                         c(data.filt[,c(allele2)] %>% as.character() == allele2control)) %>% as.integer()
     
+  }
+  
+  if (is_empty(alleleControl.df)){
+    alleleControl.df <- data.frame(sample.id = data.filt$sample.id)
   }
   return(alleleControl.df)
 }
@@ -177,10 +186,10 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
   
   ## Allele Frequency 
   # Merge dataset to include PCs
-  as2control <- settings$controlAlleles %>% unlist()
+  as2control <- settings$allele2control %>% unlist()
   alleles.freq <- colnames(OHE.alleleFreq.data)[-c(1,(ncol(OHE.alleleFreq.data)-length(as2control)):ncol(OHE.alleleFreq.data))]
-  OHE.alleleFreq.data <- merge(OHE.alleleFreq.data, covars.df[,-3], by = 'sample.id.file')
-  OHE.carrierFreq.data <- merge(OHE.carrierFreq.data, covars.df[,-3], by = 'sample.id.file')
+  OHE.alleleFreq.data <- merge(OHE.alleleFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3")], by = 'sample.id')
+  OHE.carrierFreq.data <- merge(OHE.carrierFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3")], by = 'sample.id')
   
   # Remove alleles for control 
   locus.subset <- as2control[grepl(as2control, pattern = locus)]
@@ -241,10 +250,10 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
 ############### HLA GLM ANALYSIS ################
 
 # Get cases and controls
-cases.ids <- covars.df$sample.id.file[which(covars.df$pheno ==1)]
-controls.ids <- covars.df$sample.id.file[which(covars.df$pheno ==0)]
-data.cases <- HLA.df %>% filter(sample.id.file %in% cases.ids)
-data.controls <- HLA.df %>% filter(sample.id.file %in% controls.ids)
+cases.ids <- covars.df$sample.id[which(covars.df$pheno ==1)]
+controls.ids <- covars.df$sample.id[which(covars.df$pheno ==0)]
+data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
+data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 
 # Create loci and index
 loci <- c("A","B","C","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
@@ -262,15 +271,20 @@ for (locus in loci){
   # Print 
   print(paste0("Current loci: ", locus))
   
+  # Filter out subjects with imputation probability threshold
+  probs.df_filt <- probs.df %>% filter(get(paste0("prob.", locus)) > prob_thr)
+  data.cases.filt <- data.cases %>% filter(sample.id %in% probs.df_filt$sample.id)
+  data.controls.filt <- data.controls %>% filter(sample.id %in% probs.df_filt$sample.id)
+  
   # Subset based on locus
   allele1 <- paste(locus, '.1',sep = '')
   allele2 <- paste(locus,'.2', sep =  '')
-  data.locus <- HLA.df[,c("sample.id.file",allele1, allele2)]
+  data.locus <- HLA.df[,c("sample.id",allele1, allele2)]
   
   # Compute allele frequencies and counts, and carrier frequencies and counts
-  ACFREQ.cases <- computeACFREQ(data.cases, locus, 'case');
+  ACFREQ.cases <- computeACFREQ(data.cases.filt, locus, 'case');
   totalCases <-unique(ACFREQ.cases$alleleTotalCase); carrierCases <- unique(ACFREQ.cases$carrierTotalCase)
-  ACFREQ.controls <- computeACFREQ(data.controls, locus, 'control');
+  ACFREQ.controls <- computeACFREQ(data.controls.filt, locus, 'control');
   totalControls <-unique(ACFREQ.controls$alleleTotalControl); carrierControls <- unique(ACFREQ.controls$carrierTotalControl)
   
   # Merge and clean 
@@ -283,12 +297,12 @@ for (locus in loci){
   # Parse one hot encoding and merge
   OHE.alleleFreq.data <- alleleFreqOHE(data.locus)
   OHE.alleleFreq.data <- merge(as.data.frame(OHE.alleleFreq.data), 
-                               covars.df[c('pheno', 'sample.id.file')], by.x ='sample.id.file', by.y = 'sample.id.file') %>% 
-    merge(controlAllele.df, by = 'sample.id.file')
+                               covars.df[c('pheno', 'sample.id')], by.x ='sample.id', by.y = 'sample.id') %>% 
+    merge(controlAllele.df, by = 'sample.id')
   OHE.carrierFreq.data <- carrierFreqOHE(data.locus)
   OHE.carrierFreq.data<-  merge(as.data.frame(OHE.carrierFreq.data), 
-                                covars.df[c('pheno', 'sample.id.file')], by.x ='sample.id.file', by.y = 'sample.id.file') %>% 
-    merge(controlAllele.df, by = 'sample.id.file')
+                                covars.df[c('pheno', 'sample.id')], by.x ='sample.id', by.y = 'sample.id') %>% 
+    merge(controlAllele.df, by = 'sample.id')
   
   # Run logistic regression model 
   glm.data <- runLogisticRegression(locus, OHE.alleleFreq.data, OHE.carrierFreq.data, covars.df)
@@ -301,16 +315,22 @@ for (locus in loci){
                               ACFREQ.df[,c(1,which(grepl(paste(c('A0','A1','A2', 'carrier'), collapse = '|'), colnames(ACFREQ.df))))],
                               by = 'allele')
   
+  # Filter out low frequencies
+  HLA.GLM_alleles.df <- HLA.GLM_alleles.df %>% filter(alleleFreqCase > freq_thr | alleleFreqControl > freq_thr)
+  HLA.GLM_carriers.df <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
+  
+  # Apply pvalue correction
+  HLA.GLM_alleles.df <- add_column(HLA.GLM_alleles.df, 
+                                   allele.ALLELE.pval.CORR = p.adjust(p = HLA.GLM_alleles.df$allele.ALLELE.pval, method = "BY"), 
+                                   .after = "allele.ALLELE.pval")
+  HLA.GLM_carriers.df <- add_column(HLA.GLM_carriers.df, 
+                                   allele.CARRIER.pval.CORR = p.adjust(p = HLA.GLM_carriers.df$allele.CARRIER.pval, method = "BY"), 
+                                   .after = "allele.CARRIER.pval")
+  
   # Write to excel output
-  if (settings$dataset == "Stanford"){
-    write.xlsx(x = HLA.GLM_alleles.df, file = paste(settings$folder$HLA_Output_GLM, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
-               col.names = TRUE, row.names = FALSE, append = TRUE)
-    write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$folder$HLA_Output_GLM, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
-               col.names = TRUE, row.names = FALSE, append = TRUE)
-  } else if (settings$dataset == "UKB"){
-    write.xlsx(x = HLA.GLM_alleles.df, file = paste(settings$folder$HLA_Output_GLM, 'HLA_AnalysisAlleles_UKB','.xlsx', sep = ''), sheetName = locus,
-               col.names = TRUE, row.names = FALSE, append = TRUE)
-    write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$folder$HLA_Output_GLM, 'HLA_AnalysisCarriers_UKB','.xlsx', sep = ''), sheetName = locus,
-               col.names = TRUE, row.names = FALSE, append = TRUE)
-  }
+  write.xlsx(x = HLA.GLM_alleles.df, file = paste(settings$Output$GLM, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
+             col.names = TRUE, row.names = FALSE, append = TRUE)
+  write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
+             col.names = TRUE, row.names = FALSE, append = TRUE)
+  
 }
