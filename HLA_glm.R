@@ -59,6 +59,7 @@ HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)
+file.names <- file.names[!grepl(x = file.names, pattern = "iter")]
 file.remove(file.names)
 
 ########### ONE HOT ENCODING FUNCTIONS ###############
@@ -328,9 +329,9 @@ for (locus in loci){
                                    .after = "allele.CARRIER.pval")
   
   # Write to excel output
-  write.xlsx(x = HLA.GLM_alleles.df, file = paste(settings$Output$GLM, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.GLM_alleles.df, file = paste(settings$Output$GLM, 'HLA_GLM_Alleles','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
-  write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
