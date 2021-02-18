@@ -1,9 +1,10 @@
 ## ---------------------------
 ##
-## Name: HLA_glm.R
+## Name: HLA_AA_Chi2.R
 ##
 ## Desciption: Given a dataset of HLA calls, it tests the significance
-##              of aminoacid-position pairs based on each allele
+##              of aminoacid-position pairs based on each allele by fitting 
+##              a GLM to each AA-position pair controlling for PCs
 ##
 ## Author: Vicente Peris Sempere
 ##
