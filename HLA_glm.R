@@ -328,8 +328,8 @@ for (locus in loci){
                               by = 'allele')
   
   # Filter out low frequencies
-  HLA.GLM_alleles.df_filt <- HLA.GLM_alleles.df %>% filter(alleleFreqCase > freq_thr & alleleFreqControl > freq_thr)
-  HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
+  HLA.GLM_alleles.df_filt <- HLA.GLM_alleles.df %>% filter(alleleFreqCase > freq_thr | alleleFreqControl > freq_thr)
+  HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
   
   # Apply pvalue correction
   HLA.GLM_alleles.df_filt <- add_column(HLA.GLM_alleles.df_filt, 
