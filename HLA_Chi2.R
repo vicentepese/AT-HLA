@@ -275,17 +275,17 @@ for (locus in loci){
   HLA.carriers.df_filt <- HLA.carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
   
   # Apply p-value correction
-  HLA.alleles.df_filt <- add_column(HLA.alleles.df,
-                               FishersAllelePVAL_CORR = p.adjust(p = HLA.alleles.df$FishersAllelePVAL, method = "BY"),
+  HLA.alleles.df_filt <- add_column(HLA.alleles.df_filt,
+                               FishersAllelePVAL_CORR = p.adjust(p = HLA.alleles.df_filt$FishersAllelePVAL, method = "BY"),
                                .after = "FishersAllelePVAL")
-  HLA.alleles.df_filt <- add_column(HLA.alleles.df,
-                               ChiAllelePVAL_CORR = p.adjust(p = HLA.alleles.df$ChiAllelePVAL, method = "BY"),
+  HLA.alleles.df_filt <- add_column(HLA.alleles.df_filt,
+                               ChiAllelePVAL_CORR = p.adjust(p = HLA.alleles.df_filt$ChiAllelePVAL, method = "BY"),
                                .after = "ChiAllelePVAL")
-  HLA.carriers.df_filt <- add_column(HLA.carriers.df,
-                               FishersCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df$FishersCarrierPVAL, method = "BY"),
+  HLA.carriers.df_filt <- add_column(HLA.carriers.df_filt,
+                               FishersCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df_filt$FishersCarrierPVAL, method = "BY"),
                                .after = "FishersCarrierPVAL")
-  HLA.carriers.df_filt <- add_column(HLA.carriers.df,
-                                ChiCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df$ChiCarrierPVAL, method = "BY"),
+  HLA.carriers.df_filt <- add_column(HLA.carriers.df_filt,
+                                ChiCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df_filt$ChiCarrierPVAL, method = "BY"),
                                 .after = "ChiCarrierPVAL")
   
   # Rbind with non-corrected alleles 
