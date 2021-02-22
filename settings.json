@@ -9,7 +9,8 @@
     "Output":{
         "Chi2": "Outputs/Chi2/",
         "GLM": "Outputs/GLM/",
-        "AA": "Outputs/AA/"
+        "AA": "Outputs/AA/",
+        "AA_GLM":"Outputs/AA_GLM/"
     },
 
     "file":{

@@ -3,8 +3,7 @@
 ## Name: HLA_AA_Chi2.R
 ##
 ## Desciption: Given a dataset of HLA calls, it tests the significance
-##              of aminoacid-position pairs based on each allele by fitting 
-##              a GLM to each AA-position pair controlling for PCs
+##              of aminoacid-position pairs based on each allele.
 ##
 ## Author: Vicente Peris Sempere
 ##
@@ -72,7 +71,6 @@ AA_alignment <- read.table(settings$file$AA_alignment, header = TRUE, sep = ',')
 
 # Convert from full protein to mature protein indexing
 AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
-
 
 ########## EXTRA FUNCTIONS ############
 

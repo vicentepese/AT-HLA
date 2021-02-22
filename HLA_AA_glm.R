@@ -3,7 +3,8 @@
 ## Name: HLA_AA_glm.R
 ##
 ## Desciption: Given a dataset of HLA calls, it tests the significance
-##              of aminoacid-position pairs based on each allele
+##              of aminoacid-position pairs based on each allele by 
+##              fitting a GLM for each pair controlling for PCs.
 ##
 ## Author: Vicente Peris Sempere
 ##
@@ -31,119 +32,188 @@ library(TreeBH)
 library(zeallot)
 library(epitools)
 
-########## IMPORT #########
+########## INITIALIZATION #########
 
 # Set working directory
-setwd("~/Documents/Alzheimer-Disease")
+setwd("~/Documents/HLA_association_pipeline")
 
 # Import settings
 settings <- jsonlite::read_json("settings.json")
 
-# Set values to 0
-settings$controlAlleles <- c()
-settings$excludePosSubjsByAllele <- c()
-settings$allele2Remove <- c()
-
 # Create comand
 `%notin%` <- Negate(`%in%`)
 
-# Import HLA calls and covariates
-HLA.df <- read.csv(settings$file$HLA_df)
-covars.df <- read.csv(settings$file$HLA_covars_filt)
-covars.df$pheno <- covars.df$pheno -1
-covars.df$sex <- covars.df$sex -1
+# Import HLA calls, covariates and probabilities
+HLA.df <- read.csv(settings$file$HLA_Data)
+covars.df <- read.csv(settings$file$covars)
+probs.df <- read.csv(settings$file$probs)
 
-# Add phenotype to HLA datafra,e 
-HLA.df <- merge(HLA.df, covars.df[,c("sample.id.file", "pheno")], by = "sample.id.file")
+# Correct pheno
+if (2 %in% covars.df$pheno %>% table() %>% names()){
+  covars.df$pheno <- covars.df$pheno - 1
+}
+
+# Read options
+prob_thr <- settings$prob_thr
+freq_thr <- settings$freq_thr*100
+
+# Parse HLA calls for which there is a phenotype 
+HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
+
+# Append pheno to HLA calls 
+HLA.df <- merge(HLA.df, covars.df[,c("sample.id", "pheno")], by = "sample.id")
+
+# Delete files to allow output to be written
+file.names <- list.files(settings$Output$AA, full.names = TRUE)
+file.remove(file.names)
 
 # Import amino acid alignment 
 AA_alignment <- read.table(settings$file$AA_alignment, header = TRUE, sep = ',')
 
-# Remove negative positions 
-full_prot = FALSE
-if (!full_prot){
-  AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
-}
+# Convert from full protein to mature protein indexing
+AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
 
-######### CONTROL FOR AMINO ACID ##########
+# Read AAs to control
+AAs2control <- settings$AA2control
 
-controlAA = function(settings, data, AA_alignment){
-  
-  # Get locus, position and AA to control 
-  AA2control <- settings$AA2control %>% strsplit('_') %>% unlist()
-  L2control <- AA2control[1]; posControl <- AA2control[2]; AAcontrol <- AA2control[3]
-  c(L2controlA1, L2controlA2) %<-% c(paste0(L2control,'.1'), paste0(L2control,'.2'))
-  
-  # Get sequences
-  AA2control_locus <- AA_alignment %>% filter(locus == AA2control[1])
-  
-  # Get alleles 
-  allelesAA.OG <- AA2control_locus %>% apply(MARGIN = 1, function(x, posControl, AAcontrol)
-    if (substr(x[3],posControl,posControl) == AAcontrol) {return(x[2])}, posControl, AAcontrol) %>% unlist()
-  allelesAA <- allelesAA.OG %>% lapply(function(x) strsplit(x, split='\\*') %>% unlist() %>% 
-                                         .[2] %>% strsplit(split=':') %>% unlist() %>% .[1:2] %>% paste(collapse=':')) %>% unlist()
-  
-  # Get data and count cases and controls
-  data.AApos <- data %>% filter(get(L2controlA1) %in% allelesAA| get(L2controlA2) %in% allelesAA)
-  data.AAneg <- data %>% filter(sample.id.file %notin% data.AApos$sample.if.file)
-  
-  # Create dataframe with presence of Amino Acid
-  data.AAControl <- data.frame(sample.id.file = c(data.AApos$sample.id.file, data.AAneg$sample.id.file),
-                               pos = c(rep(1, nrow(data.AApos)), rep(0, nrow(data.AAneg))))
-  colnames(data.AAControl) <- c('sample.id.file', settings$AA2control)
-  
-  return(data.AAControl)
-}
+########## OHE FUNCTIONS ##########
 
-######### DATA TO ONE HOT ENCODING #########
-
-data2OHE = function(settings, data, allelesAA, covars.df, AA_alignment){
+AA2OHE = function(settings, AAs, pos, L, AA_locus, HLA.df){
   
-  # Get data with AAs
-  data.AApos <- data %>% filter(get(A1) %in% allelesAA| get(A2) %in% allelesAA)
-  data.AAneg <- data %>% filter(sample.id.file %notin% data.AApos$sample.id.file)
+  # Get locus ID
+  c(A1, A2) %<-% c(paste0(L,'.1'), paste0(L,'.2'))
   
-  # Create dataframe with OHE
-  data.AA <- data.frame(sample.id.file = c(data.AApos$sample.id.file, data.AAneg$sample.id.file), AA = c(rep(1, nrow(data.AApos)), rep(0, nrow(data.AAneg))),
-                        pheno = c(data.AApos$pheno, data.AAneg$pheno))
+  # Initialize AAs in OHE format 
+  OHE.AA <- data.frame(sample.id = HLA.df$sample.id)
   
-  # Merge with Principal components
-  data.AA <- merge(data.AA, covars.df[,-3], by.x = "sample.id.file", by.y = "sample.id.file")
-  
-  # Merge with presence of controlled amino acid
-  if (!settings$AA2control %>% is_empty()){
-    data.AAcontrol <- controlAA(settings, data, AA_alignment)
-    data.AA <- merge(data.AA, data.AAcontrol, by = "sample.id.file")
+  # For each AA
+  for (AA in AAs){
+    
+    # Get alleles with AAs
+    allelesAA.OG <- AA_locus %>% apply(MARGIN = 1, function(x, pos, AA) if (substr(x[3],pos,pos) == AA) {return(x[2])}, pos, AA) %>% unlist()
+    allelesAA <- allelesAA.OG %>% lapply(function(x) strsplit(x, split='\\*') %>% unlist() %>% 
+                                           .[2] %>% strsplit(split=':') %>% unlist() %>% .[1:2] %>% paste(collapse=':')) %>% unlist() 
+    
+    # Get data with such alleles
+    OHE.AA[paste(L,pos,AA, sep = "_")] <- apply(HLA.df[,c(A1,A2)], 2, function(x,allelesAA) as.integer(x %in% allelesAA), allelesAA) %>%
+                           apply(1,function(x) as.integer(x[1] | x[2]))
   }
+ 
+  # Return 
+  return(OHE.AA)
+   
+}
+
+controlAAs = function(AAs2control, HLA.df){
+  
+  # For each AA
+  
+}
+
+########## COUNT AMINOACIDS ############
+
+count_AA = function(OHE.AA, locus, pos, AAs){
+  
+  # Parse cases and controls 
+  OHE.AA.cases <- OHE.AA %>% filter(pheno == 1)
+  OHE.AA.controls <- OHE.AA %>% filter(pheno == 0)
+  
+  # Parse AA 
+  AAs2control <- settings$AA2control %>% unlist()
+  AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
+  
+  # Count cases for each allele 
+  Ncases <- OHE.AA.cases[,AAs.IDs] %>% apply(MARGIN=2, function (x) x %>% table() %>% .['1'])
+  Ncontrols <- OHE.AA.controls[,AAs.IDs] %>% apply(MARGIN = 2, function (x) x %>% table() %>% .['1'])
+  
+  # Calculate frequencies 
+  FreqCases <- Ncases/nrow(OHE.AA.cases) *100
+  FreqControls <- Ncontrols/nrow(OHE.AA.controls) * 100
+  
+  # Create dataframe 
+  AA.count <- data.frame(locus = rep(locus, length(AAs)), pos = rep(pos, length(AAs)), AA = AAs, 
+                         Ncases = Ncases, FreqCases = FreqCases,
+                         Ncontrols = Ncontrols, FreqControls = FreqControls)
   
   # Return 
-  return(data.AA)
+  return(AA.count)
+  
 }
 
-######### RUN GENERALIZED LINEAR MODEL #########
+########### PARSE ALLELES ##########
 
-runGLM = function(settings, data.AA){
+parseAlleles = function(AA.model.df, AA_locus){
   
-  # GLM formula 
-  AA.name <- colnames(data.AA)[2]
-  if (length(settings$AA2control ) > 0){
-    control.AA <- paste(' ', settings$AA2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
-  } else{
-    control.AA <- ''
+  # For each Amino Acid, get the alleles where it is present 
+  alleles <- list()
+  for (i in 1:nrow(AA.model.df)){
+    pos <- AA.model.df[i,"pos"]; AA <- AA.model.df[i,"AA"]
+    alleles[[i]] <- AA_locus %>% apply(MARGIN = 1, function(x, pos, AA) if (substr(x[3],pos,pos) == AA) {return(x[2])}, pos, AA) %>% unlist()
   }
-  glm.formula <- paste0("pheno ~ ", AA.name, " + PC1 + PC2 + PC3 ", control.AA)
   
-  # Run GLM 
-  AA.model <- glm(data = data.AA, formula = as.formula(glm.formula), family = 'binomial', maxit = 100) 
-  modelMat <- model.matrix(AA.model)
+  # Append to dataframe 
+  AA.model.df$alleles <- alleles %>% lapply(function(x) x %>% unname() %>% paste(collapse = ", ")) %>% unlist()
   
-  # Check if the model matrix has full and return coefficients, otherwise return NULL
-  rank <- qr(modelMat)$rank
-  if (rank == ncol(modelMat)){
-    return(AA.model %>% summary())
-  } else {
-    return(NULL)
+  # Return 
+  return(AA.model.df)
+
+  
+}
+
+############ REGRESSION MODEL ############
+
+run_GLM = function(OHE.AA, covars.df, L, pos){
+  
+  ## Allele Frequency 
+  # Merge dataset to include PCs
+  AAs2control <- settings$AA2control %>% unlist()
+  AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
+  OHE.AA <- merge(OHE.AA, covars.df[,c("sample.id", "PC1", "PC2", "PC3")], by = 'sample.id')
+  
+  # Remove alleles for control
+  OHE.AA[AAs2control] <- NULL
+  AAs.IDs <- AAs.IDs[!AAs.IDs %in% AAs2control]
+  
+  # Run logistic regression on carrier frequency 
+  AA.model.df <- data.frame(); AAs <- c()
+  for (AA in AAs.IDs){
+    
+    # Ensure presence of allele / skip aliased 
+    if (OHE.AA[, AA] %>% unique() %>% length() == 1){
+      next
+    }
+    
+    # Append AA
+    AAs <- c(AAs, AA %>% strsplit("_") %>% unlist() %>% tail(n=1))
+    
+    # Control for AA (if present, else empty)
+    if (length(AAs2control) > 0){
+      control.AAs <- paste(' ', AAs2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
+    } else{
+      control.AAs <- ''
+    }
+    
+    # Fit GLM and bind row-wise to intial dataframe 
+    glm.formula <- paste('pheno ~ `',AA, '` + PC1 + PC2 + PC3', control.AAs, sep = '')
+    AA.model <- glm(data = OHE.AA, 
+                          formula = as.formula(glm.formula),
+                          family = 'binomial', maxit = 100) %>% summary()
+    AA.model.df <- rbind(AA.model.df, c(AA.model$coefficients[2,1], 
+                                        AA.model$coefficients[,dim(AA.model$coefficients)[2]]))
+    
   }
+  
+  # Change column names 
+  colnames(AA.model.df) <- c('AA.COEF', c('Incercept', 'AA', AA.model$coefficients[-c(1,2),] %>% row.names()) %>%
+                                     paste('.pval', sep = ''))
+  
+  # Create data frame 
+  AA.model.df <- data.frame(locus = rep(L, nrow(AA.model.df)), pos = rep(pos, nrow(AA.model.df)), AA = AAs,
+                            AA.model.df)
+
+  # Return
+  return(AA.model.df)
+  
 }
 
 ########## AMINO ACID ANALYSIS ##########
@@ -153,16 +223,13 @@ loci <- unique(AA_alignment$locus)
 c(Ncases, Ncontrols) %<-% c(HLA.df$pheno %>% table %>%.['1'], HLA.df$pheno %>% table %>%.['0'])
 
 # Initialize loop
-locus <- c(); AA.eval <- c();  pos.eval <- c(); AA.estimate <- c()
-intercept.PVAL <- c(); AA.pval <- c(); PC1.pval <-c(); PC2.pval <- c(); PC3.pval <- c(); AA2control.pval <- c();
-alleles <- c(); 
-
-# Initialize loop for map variables
-colnameMapPos <- c()
-mapPos.df <- matrix(nrow = nrow(HLA.df))
+AA.df <- data.frame()
 
 # For each locus 
 for (L in loci){
+  
+  # Verbose
+  print(paste0("Current locus: HLA-", L))
   
   # Get locus ID
   c(A1, A2) %<-% c(paste0(L,'.1'), paste0(L,'.2'))
@@ -178,114 +245,47 @@ for (L in loci){
     
     # Get unique AAs
     AAs <- AA_locus$sequence %>% lapply(function(x, pos) substr(x, pos, pos), pos) %>% unlist() %>% unique()
-    AAs <- AAs[which(AAs != '' & AAs!= '*')]
     
     # If more than one, count 
     if (length(AAs) >1){
       
-      for (AA in AAs){
-        
-        # Skip controlled alleles
-        if (paste(L,pos,AA, sep='_') == settings$AA2control[1]){
-          next
-        }
-        
-        # Get alleles with AAs
-        allelesAA.OG <- AA_locus %>% apply(MARGIN = 1, function(x, pos, AA) if (substr(x[3],pos,pos) == AA) {return(x[2])}, pos, AA) %>% unlist()
-        allelesAA <- allelesAA.OG %>% lapply(function(x) strsplit(x, split='\\*') %>% unlist() %>% 
-                                               .[2] %>% strsplit(split=':') %>% unlist() %>% .[1:2] %>% paste(collapse=':')) %>% unlist() 
-        
-        # Crete one hot encoding dataframes
-        data.AA <- data2OHE(settings, HLA.df, allelesAA, covars.df, AA_alignment); colnames(data.AA)[2] <- paste(L,pos,AA, sep = '_')
-        
-        # Get map of positions
-        mapPos.df <- cbind(mapPos.df, data.AA[,c(paste(L,pos,AA, sep='_'))])
-        colnameMapPos <- c(colnameMapPos, paste(L,pos,AA, sep='_'))
-        
-        # Run generalized linear model 
-        model.AA <- runGLM(settings, data.AA)
-        
-        # If rank is not equal to model matrix (dummy variable trap) skip
-        if (is.null(model.AA)){
-          next 
-        }
-        
-        # Else, get coefficients
-        coefs <- model.AA$coefficients; pvalDim <- dim(coefs)[2]
-        
-        # Append to vectors
-        locus <- c(locus, L); AA.eval <- c(AA.eval, AA); pos.eval <- c(pos.eval, pos);
-        AA.estimate <- c(AA.estimate, coefs[2,1]); intercept.PVAL <- c(intercept.PVAL, coefs[1, pvalDim])
-        AA.pval <- c(AA.pval, coefs[2, pvalDim]); PC1.pval <- c(PC1.pval, coefs[3, pvalDim]);
-        PC2.pval <- c(PC2.pval, coefs[4, pvalDim]); PC3.pval <- c(PC3.pval, coefs[5, pvalDim]); 
-        alleles <- c(alleles, paste(allelesAA.OG, collapse = '; '))
-        if (dim(coefs)[1] == 6){
-          AA2control.pval <- c(AA2control.pval, coefs[6, pvalDim]);
-        }
-        
-      }
-    }
-  }
-}
-
-# Create dataframe
-AA.analysis.results <- data.frame(locus= locus, AA = AA.eval, pos = pos.eval, AA.estimate = AA.estimate, intercept.PVAL = intercept.PVAL, 
-                                  AA.pval = AA.pval, AA.pvalBONF= AA.pval*length(AA.pval), PC1.pval = PC1.pval, PC2.pval = PC2.pval, PC3.pval = PC3.pval, AA2control.pval = AA2control.pval,
-                                  alleles = alleles)
-colnames(AA.analysis.results)[ncol(AA.analysis.results)-1] = settings$AA2control
-
-# Write 
-write.csv(x = AA.analysis.results, file = paste0(settings$folder$HLA_Output_AA_GLM, "HLA_AA_GLM.csv"))
-
-########## EXTRA FUNCTIONS ############
-
-carrierCount = function(settings, data){
-  
-  # Get loci, number of cases, number of controls
-  loci <- colnames(data)[which(grepl('HLA', colnames(data)))] %>%
-    lapply(function(x) x %>% strsplit('_') %>% unlist() %>% .[1] %>% strsplit('HLA') %>% unlist() %>% .[2]) %>% unlist() %>% unique()
-  c(Ncases, Ncontrols) %<-% c(data$Dx %>% table() %>% .['1'], data$Dx %>% table() %>% .['0'])
-  
-  # Initialize loop 
-  alleles <- c(); locusVec <- c(); cases.Count <- c(); controls.Count <- c()
-  
-  # For each locus, count carrier in cases and controls
-  for (locus in loci){
-    
-    # Get alleles 
-    c(A1, A2) %<-% c(paste('HLA', locus, '_A1', sep = ''), paste('HLA', locus, '_A2', sep = ''))
-    data.locus <- data[, c('GWASID', A1, A2, 'Dx')]
-    
-    # Get carriers and count 
-    carriers.locus <- c(data.locus[,A1], data.locus[,A2]) %>% unique()
-    carriers.locus <- carriers.locus[which(carriers.locus != "")]
-    for(carrier in carriers.locus){
-      data.carrier <- data.locus %>% filter(get(A1) == carrier | get(A2) == carrier)
-      c(C.cases, C.controls ) %<-% c(table(data.carrier$Dx)['1'], table(data.carrier$Dx)['0']);
-      if(C.cases %>% is.na()){C.cases <- 0}; if (C.controls %>% is.na()) {C.controls <- 0}
-      c(F.cases, F.controls) %<-% c(C.cases/Ncases, C.controls/Ncontrols)
+      # Convert AA carriers into OHE
+      OHE.AA <- AA2OHE(settings, AAs, pos, L, AA_locus, HLA.df)
       
-      # If frequency is smaller than a threshold, next. Else add to vector 
-      if (is.na(C.cases) | is.na(C.controls)){
-        next 
-      } else if (F.cases < settings$min_carrierFreq | F.controls < settings$min_carrierFreq){
-        next
-      } else{
-        locusVec <- c(locusVec, locus)
-        A <- paste( locus, '*', carrier, ':01', sep = ''); alleles <- c(alleles, A)
-        cases.Count <- c(cases.Count, C.cases); controls.Count <- c(controls.Count, C.controls)
-      }
+      # Append phenotypes 
+      OHE.AA <- merge(OHE.AA, covars.df[,c("sample.id", "pheno")], by = "sample.id")
+      
+      # Filter out subjects with low imputation probability
+      probs.df_filt <- probs.df %>% filter(get(paste0("prob.", L)) > prob_thr)
+      OHE.AA <- OHE.AA %>% filter(sample.id %in% probs.df_filt$sample.id)
+      
+      # Get OHE of control AAs 
+      # OHE.controlAA <- AA2OHE(settings, AAs)
+      
+      # Fit GLM 
+      AA.model.df <- run_GLM(OHE.AA, covars.df, L, pos)
+      
+      # Count
+      AA.count <- count_AA(OHE.AA, L, pos, AAs)
+      
+      # Merge
+      AA.model.df <- merge(AA.model.df, AA.count, by = c("locus", "pos", "AA"))
+      
+      # Parse alleles
+      AA.model.df <- parseAlleles(AA.model.df, AA_locus)
+      
+      # Bind row-wise to dataframe 
+      AA.df <- rbind(AA.df, AA.model.df)
     }
   }
-  
-  # Create data frame 
-  counts.data <- data.frame(locus = locusVec, allele = alleles, Ncases = cases.Count, Ncontrols = controls.Count)
-  
-  # Return 
-  return (counts.data)
-  
 }
 
 
+# Adjust p-value through FDR correction, append to results
+pval.corr <- p.adjust(p = AA.df$AA.pval, method = "BY")
+AA.df <- add_column(AA.df, pval.corr, .after = "AA.pval")
+
+# Save dataframe 
+write.csv(AA.df, file = paste0(settings$Output$AA_GLM, "AA_GLM.csv"), row.names = FALSE)
 
 

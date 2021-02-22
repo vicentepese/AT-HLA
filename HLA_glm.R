@@ -92,7 +92,7 @@ carrierFreqOHE=function(test_DF){
 
 ########### CONTROL ALLELES ##########
 
-controlAllele = function(settings, locus, data.filt){
+controlAllele = function(settings, data.filt){
   
   # Alleles to control
   As2control = settings$allele2control
@@ -261,7 +261,7 @@ loci <- c("A","B","C","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
 idx <- 1
 
 # Control for allele
-controlAllele.df <- controlAllele(settings, loci, HLA.df)
+controlAllele.df <- controlAllele(settings, HLA.df)
 
 # Iterate over loci for univariate analysis
 models.df <- data.frame()
