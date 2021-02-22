@@ -200,7 +200,7 @@ runLogisticRegression = function(locus, OHE.carrierFreq.data, covars.df, as2cont
   # Run logistic regression on carrier frequency 
   Acarrier.model.df <- data.frame()
   for (allele in alleles.freq){
-    if (!is_empt(as2control)){
+    if (!is_empty(as2control)){
       control.alleles <- paste(' ', as2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
     } else{
       control.alleles <- ''
