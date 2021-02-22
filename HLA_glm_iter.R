@@ -244,7 +244,7 @@ fitGLM = function(settings, locus, HLA.df, data.cases, data.controls, covars.df,
   ACFREQ.df <- merge(ACFREQ.cases[,!names(ACFREQ.cases) %in% c('A0','A1','A2')], ACFREQ.controls, by = 'allele', all = TRUE) 
   ACFREQ.df[is.na(ACFREQ.df)] <- 0
   ACFREQ.df$carrierTotalCase <- rep(carrierCases, nrow(ACFREQ.df)); ACFREQ.df$carrierTotalControl <- rep(carrierControls, nrow(ACFREQ.df))
-  ACFREQ.df <- ACFREQ.df %>% filter(allele != '')
+  ACFREQ.df <- ACFREQ.df %>% filter(allele %notin% c('',"00:00"))
   
   # Parse one hot encoding and merge
   OHE.carrierFreq.data <- carrierFreqOHE(data.locus); if ('V1' %in% colnames(OHE.carrierFreq.data)){OHE.carrierFreq.data$V1 <- NULL}
@@ -254,6 +254,9 @@ fitGLM = function(settings, locus, HLA.df, data.cases, data.controls, covars.df,
   
   # Remove subjects thar are not controls or cases
   OHE.carrierFreq.data <- OHE.carrierFreq.data %>% filter(pheno != -9)
+  
+  # Remove useless alleles
+  OHE.carrierFreq.data <- OHE.carrierFreq.data[,which(names(OHE.carrierFreq.data) %notin% c("", "00:00"))]
   
   # Run logistic regression model 
   glm.data <- runLogisticRegression(locus, OHE.carrierFreq.data, covars.df, as2control)

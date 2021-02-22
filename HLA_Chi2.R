@@ -28,6 +28,7 @@ library(corrplot)
 library(randomForest)
 library(xlsx)
 library(TreeBH)
+library(plyr)
 
 ########### INITIALIZATION ############
 
@@ -236,6 +237,7 @@ loci <- c("A","B","C","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
 idx <- 1
 for (locus in loci){
   
+  # Verbose
   print(paste0("Current locus: ", locus))
   
   # Filter out subjects with imputation probability threshold
@@ -254,7 +256,7 @@ for (locus in loci){
   ACFREQ.df[is.na(ACFREQ.df)] <- 0
   ACFREQ.df$alleleTotalCase <- rep(totalCases, nrow(ACFREQ.df)); ACFREQ.df$alleleTotalControl <- rep(totalControls, nrow(ACFREQ.df));
   ACFREQ.df$carrierTotalCase <- rep(carrierCases, nrow(ACFREQ.df)); ACFREQ.df$carrierTotalControl <- rep(carrierControls, nrow(ACFREQ.df))
-  ACFREQ.df <- ACFREQ.df %>% filter(allele != '')
+  ACFREQ.df <- ACFREQ.df %>% filter(allele %notin% c('','00:00'))
   
   # Compute Chi2
   stats.data <- computeChi2(ACFREQ.df)
