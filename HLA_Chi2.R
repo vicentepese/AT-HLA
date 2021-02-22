@@ -269,27 +269,31 @@ for (locus in loci){
                             by = 'allele')
   
   # Filter out low frequencies 
-  HLA.alleles.df <- HLA.alleles.df %>% filter(alleleFreqCase > freq_thr & alleleFreqControl > freq_thr)
-  HLA.carriers.df <- HLA.carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
+  HLA.alleles.df_filt <- HLA.alleles.df %>% filter(alleleFreqCase > freq_thr & alleleFreqControl > freq_thr)
+  HLA.carriers.df_filt <- HLA.carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
   
   # Apply p-value correction
-  HLA.alleles.df <- add_column(HLA.alleles.df,
+  HLA.alleles.df_filt <- add_column(HLA.alleles.df,
                                FishersAllelePVAL_CORR = p.adjust(p = HLA.alleles.df$FishersAllelePVAL, method = "BY"),
                                .after = "FishersAllelePVAL")
-  HLA.alleles.df <- add_column(HLA.alleles.df,
+  HLA.alleles.df_filt <- add_column(HLA.alleles.df,
                                ChiAllelePVAL_CORR = p.adjust(p = HLA.alleles.df$ChiAllelePVAL, method = "BY"),
                                .after = "ChiAllelePVAL")
-  HLA.carriers.df <- add_column(HLA.carriers.df,
+  HLA.carriers.df_filt <- add_column(HLA.carriers.df,
                                FishersCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df$FishersCarrierPVAL, method = "BY"),
                                .after = "FishersCarrierPVAL")
-  HLA.carriers.df <- add_column(HLA.carriers.df,
+  HLA.carriers.df_filt <- add_column(HLA.carriers.df,
                                 ChiCarrierPVAL_CORR = p.adjust(p = HLA.carriers.df$ChiCarrierPVAL, method = "BY"),
                                 .after = "ChiCarrierPVAL")
   
+  # Rbind with non-corrected alleles 
+  HLA.alleles.df_filt <- HLA.alleles.df_filt %>% rbind.fill(HLA.alleles.df %>% filter(allele %notin% HLA.alleles.df_filt$allele))
+  HLA.carriers.df_filt <- HLA.carriers.df_filt %>% rbind.fill(HLA.carriers.df %>% filter(allele %notin% HLA.carriers.df_filt$allele))
+  
   # Write 
-  write.xlsx(x = HLA.alleles.df, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.alleles.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
-  write.xlsx(x = HLA.carriers.df, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.carriers.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
