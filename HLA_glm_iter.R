@@ -54,6 +54,7 @@ if (2 %in% covars.df$pheno %>% table() %>% names()){
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
+as2control <- settings$allele2control
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
@@ -199,7 +200,7 @@ runLogisticRegression = function(locus, OHE.carrierFreq.data, covars.df, as2cont
   # Run logistic regression on carrier frequency 
   Acarrier.model.df <- data.frame()
   for (allele in alleles.freq){
-    if (!is.null(as2control)){
+    if (!is_empt(as2control)){
       control.alleles <- paste(' ', as2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
     } else{
       control.alleles <- ''
@@ -275,7 +276,7 @@ data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
 data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 
 # Initialize while lopp
-pval <- 0; as2control <- c(); signAlleles <- list(); 
+pval <- 0; signAlleles <- list(); 
 
 # HLA Loci
 loci <- c('A','B','C','DQA1', 'DQB1', 'DPB1', 'DRB1','DRB3','DRB4','DRB5')
@@ -320,6 +321,9 @@ while (pval < 0.05){
       pvalTotal[paste(locus, '*', A, sep = '')] <- pvalA
     }
   }
+  
+  # Exlude NAs
+  pvalTotal <- pvalTotal[!is.na(pvalTotal)]
   
   # Get minimum allele value 
   pval <- pvalTotal[which(pvalTotal == min(pvalTotal))][1]
