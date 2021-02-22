@@ -27,6 +27,7 @@ library(parallel)
 library(corrplot)
 library(randomForest)
 library(xlsx)
+library(plyr)
 
 ########### INITIALIZATION ############
 
@@ -56,6 +57,16 @@ alleles2control <- settings$allele2control %>% unlist()
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
+
+# Parse HLA calls based on ethnicity, if provided
+if (!settings$ethnicity %>% is_empty()){
+  
+  # Parse IDs in ethnicity/ies
+  ethnicity.df <- read.csv(settings$file$ethnicity)
+  ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
+  HLA.df <- HLA.df %>% 
+    filter(sample.id %in% ethnicity.df.filt$sample.id)
+}
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)
@@ -317,21 +328,26 @@ for (locus in loci){
                               by = 'allele')
   
   # Filter out low frequencies
-  HLA.GLM_alleles.df <- HLA.GLM_alleles.df %>% filter(alleleFreqCase > freq_thr | alleleFreqControl > freq_thr)
-  HLA.GLM_carriers.df <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
+  HLA.GLM_alleles.df_filt <- HLA.GLM_alleles.df %>% filter(alleleFreqCase > freq_thr & alleleFreqControl > freq_thr)
+  HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
   
   # Apply pvalue correction
-  HLA.GLM_alleles.df <- add_column(HLA.GLM_alleles.df, 
-                                   allele.ALLELE.pval.CORR = p.adjust(p = HLA.GLM_alleles.df$allele.ALLELE.pval, method = "BY"), 
+  HLA.GLM_alleles.df_filt <- add_column(HLA.GLM_alleles.df_filt, 
+                                   allele.ALLELE.pval.CORR = p.adjust(p = HLA.GLM_alleles.df_filt$allele.ALLELE.pval, method = "BY"), 
                                    .after = "allele.ALLELE.pval")
-  HLA.GLM_carriers.df <- add_column(HLA.GLM_carriers.df, 
-                                   allele.CARRIER.pval.CORR = p.adjust(p = HLA.GLM_carriers.df$allele.CARRIER.pval, method = "BY"), 
+  HLA.GLM_carriers.df_filt <- add_column(HLA.GLM_carriers.df_filt, 
+                                   allele.CARRIER.pval.CORR = p.adjust(p = HLA.GLM_carriers.df_filt$allele.CARRIER.pval, method = "BY"), 
                                    .after = "allele.CARRIER.pval")
   
+  # Rbind with non-corrected alleles 
+  HLA.GLM_alleles.df_filt <- HLA.GLM_alleles.df_filt %>% rbind.fill(HLA.GLM_alleles.df %>% filter(allele %notin% HLA.GLM_alleles.df_filt$allele))
+  HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df_filt %>% rbind.fill(HLA.GLM_carriers.df %>% filter(allele %notin% HLA.GLM_carriers.df_filt$allele))
+  
+  
   # Write to excel output
-  write.xlsx(x = HLA.GLM_alleles.df, file = paste(settings$Output$GLM, 'HLA_GLM_Alleles','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.GLM_alleles.df_filt, file = paste(settings$Output$GLM, 'HLA_GLM_Alleles','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
-  write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.GLM_carriers.df_filt, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
