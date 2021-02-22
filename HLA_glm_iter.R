@@ -295,14 +295,21 @@ while (pval < 0.05){
     # Filter out low frequencies
     HLA.GLM_carriers.df <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
     
-    # Apply p-value correction for FDR
-    HLA.GLM_carriers.df <- add_column(HLA.GLM_carriers.df, 
-                                      allele.CARRIER.pval.CORR = p.adjust(p = HLA.GLM_carriers.df$allele.CARRIER.pval, method = "BY"), 
-                                      .after = "allele.CARRIER.pval")
+    # Filter out low frequencies
+    HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
+    
+    # Apply pvalue correction
+    HLA.GLM_carriers.df_filt <- add_column(HLA.GLM_carriers.df_filt, 
+                                           allele.CARRIER.pval.CORR = p.adjust(p = HLA.GLM_carriers.df_filt$allele.CARRIER.pval, method = "BY"), 
+                                           .after = "allele.CARRIER.pval")
+    
+    # Rbind with non-corrected alleles 
+    HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df_filt %>% rbind.fill(HLA.GLM_carriers.df %>% filter(allele %notin% HLA.GLM_carriers.df_filt$allele))
+    
     # Append to list
-    HLA.GLM_carriers.list[[locus]] <- HLA.GLM_carriers.df 
-    for (A in HLA.GLM_carriers.df$allele){
-      pvalA <- HLA.GLM_carriers.df$allele.CARRIER.pval.CORR[which(HLA.GLM_carriers.df$allele == A)]
+    HLA.GLM_carriers.list[[locus]] <- HLA.GLM_carriers.df_filt 
+    for (A in HLA.GLM_carriers.df_filt$allele){
+      pvalA <- HLA.GLM_carriers.df_filt$allele.CARRIER.pval.CORR[which(HLA.GLM_carriers.df_filt$allele == A)]
       pvalTotal[paste(locus, '*', A, sep = '')] <- pvalA
     }
   }
