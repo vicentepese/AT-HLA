@@ -58,6 +58,16 @@ freq_thr <- settings$freq_thr*100
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
+# Parse HLA calls based on ethnicity, if provided
+if (!settings$ethnicity %>% is_empty()){
+  
+  # Parse IDs in ethnicity/ies
+  ethnicity.df <- read.csv(settings$file$ethnicity)
+  ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
+  HLA.df <- HLA.df %>% 
+    filter(sample.id %in% ethnicity.df.filt$sample.id)
+}
+
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "iter")]
