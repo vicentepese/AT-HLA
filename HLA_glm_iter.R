@@ -293,7 +293,7 @@ while (pval < 0.05){
     HLA.GLM_carriers.df <- fitGLM(settings, locus, HLA.df, data.cases, data.controls, covars.df, as2control)
     
     # Filter out low frequencies
-    HLA.GLM_carriers.df <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
+    HLA.GLM_carriers.df <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr & carrierFreqControl > freq_thr)
     
     # Apply p-value correction for FDR
     HLA.GLM_carriers.df <- add_column(HLA.GLM_carriers.df, 
