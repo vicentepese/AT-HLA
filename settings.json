@@ -24,7 +24,7 @@
     "prob_thr":0.3,
     "freq_thr":0.05,
     "ethnicity":[],
-    "allele2control":[],
+    "allele2control":["DRB1*07:01","DRB1*04:02"],
     "AA2control":[]
 
 }
