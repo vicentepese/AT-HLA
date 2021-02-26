@@ -89,12 +89,13 @@ haplo_EM = function(settings, HLA.df){
   # Get haplotypes and haplotype indexes
   haplotypes <- haplo.em.df$haplotype
   subj.idx <- haplo.em.df$subj.id
+  subj.ids.idx <- HLA.df$sample.id[subj.idx]
   hap1.code <- haplo.em.df$hap1code
   hap2.code <- haplo.em.df$hap2code
   
   # Create dataframe with haplotypes 
-  haplo.df <- cbind(data.frame(sample.id = HLA.df$sample.id[haplo.em.df$subj.id]), haplotypes[hap1.code,])
-  haplo.df2 <- cbind(data.frame(sample.id = HLA.df$sample.id[haplo.em.df$subj.id]), haplotypes[hap2.code,])
+  haplo.df <- cbind(data.frame(sample.id = HLA.df$sample.id[subj.idx]), haplotypes[hap1.code,])
+  haplo.df2 <- cbind(data.frame(sample.id = HLA.df$sample.id[subj.idx]), haplotypes[hap2.code,])
   haplo.df <- rbind(haplo.df, haplo.df2)
   
   # Remove duplicates (include only carriers / extended haplotype)
@@ -118,15 +119,62 @@ haplo_EM = function(settings, HLA.df){
   haplo.count <- haplo.count %>% add_column(Freq.Cases = haplo.count$Count.Cases / Ncases *100, .after = "Count.Cases")
   haplo.count <- haplo.count %>% add_column(Freq.Controls = haplo.count$Count.Controls /Ncontrols *100, .after = "Count.Controls")
   
+  # Create vector and initialize
+  haplo.count$OR <- NA; haplo.count$Chi2 <- NA; As2control <- settings$allele2control %>% unlist()
+  haplo.count$RefCases <- NA; haplo.count$RefControls <- NA
+  # For each haplotype, compute Chi SQ based on reference 
+  for (i in 1:nrow(haplo.count)){
+    
+    # Get ids of reference and filter out based on the allele to control / exclude
+    HLA.ref <- HLA.df %>% filter(sample.id %notin% subj.ids.idx[hap1.code == i | hap2.code == i])
+    for(A in As2control){
+      locus <- A %>% strsplit(split = "\\*") %>% unlist() %>% head(n=1)
+      locusIds <- paste0(rep(locus,2), c(".1", ".2"))
+      allele.id <-  A %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)
+      HLA.ref <- HLA.ref %>% filter_at(locusIds, all_vars(.!=allele.id))
+    }
+    
+    # Get ref number of cases and controls, append
+    RefCases <- HLA.ref$pheno %>% table() %>% .["1"]; RefControls <- HLA.ref$pheno %>% table() %>% .["0"]
+    haplo.count$RefCases[i] <- RefCases; haplo.count$RefControls[i] <- RefControls
+    
+    # Create contingency table
+    cont.table <- matrix(c(haplo.count[i,"Count.Cases"], RefCases, haplo.count[i,"Count.Controls"], RefControls), ncol = 2)
+    
+    # Compute OR and Chi2
+    chi2.res <- chisq.test(cont.table)
+    OR.res <- (cont.table[1]*cont.table[4])/(cont.table[2]*cont.table[3])
+    
+
+    
+    # Append to dataframe 
+    haplo.count$Chi2[i] <- chi2.res$p.value
+    haplo.count$OR[i] <- OR.res
+  }
+  
+  # Return 
+  return(haplo.count)
+  
   
 }
 
-################## COUNT HAPLOTYPES ################## 
+################## HAPLOTYPE ANALYSIS  ################## 
+
+# Count haplotypes with Expectation Maximization and run Chi2 test
+haplo.count <- haplo_EM(settings, HLA.df)
+
+# Write 
+write.xlsx(x = haplo.count, file = paste0(settings$Output$Haplotype, "HLA_EM.xlsx"), col.names = TRUE, row.names = FALSE)
 
 
-# Get reference 
-HLA.df.ref <- HLA.df %>% filter(DRB1.1 != "07:01" & DRB1.2 != "07:01")
-
-# Compute Chi-square 
 
 
+
+
+################## SCRATCH ##################
+tst <- HLA.df %>% filter( (DQA1.1 == '02:01' | DQA1.2 == "02:01") &
+                          (DQB1.1 == "02:02" | DQB1.2 == "02:02") & 
+                          (DRB1.1 == "07:01" | DRB1.2 == "07:01") & 
+                          (DRB4.1 == "01:01" | DRB4.2 == "01:01"))
+tst.ref <- HLA.df %>% filter(sample.id %notin% tst$sample.id)
+tst.ref <- tst.ref %>% filter(DRB1.1 != "07:01" & DRB1.2 != "07:01")
