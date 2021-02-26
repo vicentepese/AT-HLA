@@ -10,7 +10,8 @@
         "Chi2": "Outputs/Chi2/",
         "GLM": "Outputs/GLM/",
         "AA": "Outputs/AA/",
-        "AA_GLM":"Outputs/AA_GLM/"
+        "AA_GLM":"Outputs/AA_GLM/",
+        "Haplotype":"Outputs/Haplotype/"
     },
 
     "file":{
@@ -24,7 +25,8 @@
     "prob_thr":0.3,
     "freq_thr":0.05,
     "ethnicity":[],
-    "allele2control":["DRB1*07:01","DRB1*04:02"],
-    "AA2control":[]
+    "allele2control":["DRB1*07:01"],
+    "AA2control":[],
+    "Haplotype":["DQA1*02:01", "DQB1*02:02", "DRB1*07:01","DRB4*01:01"]
 
 }
