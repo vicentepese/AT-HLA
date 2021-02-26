@@ -24,4 +24,15 @@ AT-HLA runs on:
 > R 4.0.2 or superior <br>
 
 with the following packages:
-> 
+> jsonlite 1.7.0 <br>
+> tidyverse 1.3.0 <br>
+> readr 1.3.1 <br>
+> data.table 1.12.8 <br>
+> xlsx 0.6.3 <br>
+> zeallot 0.1.0 <br>
+> epitools 0.5.10.1 <br>
+> plyr 1.8.6 <br>
+> haplo.stats 1.8.6 <br>
+
+## 2.1 Initialization 
+
