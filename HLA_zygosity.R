@@ -102,6 +102,7 @@ zyg.df$Ncontrols <- c(HLA.homo$pheno %>% table() %>% .["0"], HLA.hetero$pheno %>
 zyg.df$FreqControls <- c(zyg.df$Ncontrols/ HLA.df$pheno %>% table() %>% .["0"]) *100
 
 # Compute OR
+zyg.df$OR <- NA; zyg.df$Chi2 <- NA
 for (i in range(1,2)){
   cont.table <- matrix(c(zyg.df$Ncases[i], zyg.df$Ncases[3], zyg.df$Ncontrols[i], zyg.df$Ncontrols[3]), nrow=2)
   chi2.res <- chisq.test(cont.table)
@@ -109,3 +110,7 @@ for (i in range(1,2)){
   zyg.df$OR[i] <- OR.res
   zyg.df$Chi2[i] <- chi2.res$p.value
 }
+
+# Write output
+write.xlsx(x = zyg.df, file = paste0(settings$Output$Zygosity, "HLA_zygosity_", allele2control,".xlsx"), row.names = F)
+
