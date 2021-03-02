@@ -67,7 +67,7 @@ file.names <- list.files(settings$Output$Haplotype, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "HLA_Haplotype.")]
 file.remove(file.names)
 
-################## COUNT HAPLOTYPES ################## 
+########### COUNT HAPLOTYPES ########### 
 
 countHaplo = function(settings, HLA.df, covars.df){
   
@@ -171,7 +171,7 @@ countHaplo = function(settings, HLA.df, covars.df){
   
 }
 
-################## HAPLOTYPE ANALYSIS ################## 
+########### HAPLOTYPE ANALYSIS ########### 
 
 # Create haplotype variables 
 haplotype <- settings$Haplotype %>% unlist()

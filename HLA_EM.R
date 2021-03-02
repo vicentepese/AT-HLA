@@ -24,7 +24,7 @@ library(plyr)
 library(epitools)
 library(haplo.stats)
 
-########### INITIALIZATION ############
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -40,7 +40,7 @@ HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
-# Correct pheno for logistic regression 
+# Correct pheno for simplicity
 if (2 %in% covars.df$pheno %>% table() %>% names()){
   covars.df$pheno <- covars.df$pheno - 1
 }
@@ -63,9 +63,8 @@ if (!settings$ethnicity %>% is_empty()){
 }
 
 ################# MERGE DRBs ################# 
+
 merge_DRB = function(settings, HLA.df){
-  
-  grepl(colnames(HLA.df), pattern = paste(c("DRB3", "DRB4", "DRB5"), collapse = "|")) %>% table() %>% .["TRUE"]/2
   
   # Check that DRB3 4 or 5 are present in the dataset
   if (grepl(colnames(HLA.df), pattern = paste(c("DRB3", "DRB4", "DRB5"), collapse = "|")) %>% any()){
@@ -76,7 +75,7 @@ merge_DRB = function(settings, HLA.df){
     # Create columns on the HLA calls
     HLA.df$DRB.1 <- NA; HLA.df$DRB.2 <- NA
     
-    # For each triplet/suplet of alleles
+    # For each triplet/duplet of alleles
     for (i in 1:nrow(DRB.cols)){
       
       # Get non-missing alleles
@@ -97,14 +96,14 @@ merge_DRB = function(settings, HLA.df){
       HLA.df$DRB.1[i] <- As[1]; HLA.df$DRB.2[i] <- As[2]
       
     }
-    
   }
   
+  # Return dataframe with DRB3-4-5 merged to DRB
   return(HLA.df)
   
 }
 
-################# COMPUTE EM ###################
+###########  EXPECTATION MAXIMIZATION ########### 
 
 haplo_EM = function(settings, HLA.df, probs.df){
   
@@ -132,7 +131,7 @@ haplo_EM = function(settings, HLA.df, probs.df){
   haplo.df <- cbind(data.frame(sample.id = HLA.df$sample.id[subj.idx]), haplotypes[hap1.code,])
   haplo.df2 <- cbind(data.frame(sample.id = HLA.df$sample.id[subj.idx]), haplotypes[hap2.code,])
   haplo.df <- rbind(haplo.df, haplo.df2)
-  # 
+
   # Remove duplicates (include only carriers / extended haplotype)
   haplo.df <- haplo.df[!duplicated(haplo.df),]
   
@@ -157,6 +156,7 @@ haplo_EM = function(settings, HLA.df, probs.df){
   # Create vector and initialize
   haplo.count$OR <- NA; haplo.count$Chi2 <- NA; As2control <- settings$allele2control %>% unlist()
   haplo.count$RefCases <- NA; haplo.count$RefControls <- NA
+  
   # For each haplotype, compute Chi SQ based on reference 
   for (i in 1:nrow(haplo.count)){
     
@@ -168,7 +168,7 @@ haplo_EM = function(settings, HLA.df, probs.df){
       allele.id <-  A %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)
       HLA.ref <- HLA.ref %>% filter_at(locusIds, all_vars(.!=allele.id))
     }
-    
+
     # Get ref number of cases and controls, append
     RefCases <- HLA.ref$pheno %>% table() %>% .["1"]; RefControls <- HLA.ref$pheno %>% table() %>% .["0"]
     haplo.count$RefCases[i] <- RefCases; haplo.count$RefControls[i] <- RefControls
@@ -180,22 +180,19 @@ haplo_EM = function(settings, HLA.df, probs.df){
     chi2.res <- chisq.test(cont.table)
     OR.res <- (cont.table[1]*cont.table[4])/(cont.table[2]*cont.table[3])
     
-
-    
     # Append to dataframe 
     haplo.count$Chi2[i] <- chi2.res$p.value
     haplo.count$OR[i] <- OR.res
   }
   
-  # Return 
+  # Return count of and stats of stats 
   return(haplo.count)
-  
   
 }
 
 ################## HAPLOTYPE ANALYSIS  ################## 
 
-# Merge DRB3-4-5
+# Merge DRB3-4-5 into a single DRB locus
 HLA.df <- merge_DRB(settings = settings, HLA.df)
 
 # Check that DRB3-4-5 were merged and compute mean probability of loci for filtering
@@ -213,15 +210,3 @@ haplo.count <- haplo_EM(settings, HLA.df, probs.df)
 # Write 
 write.xlsx(x = haplo.count, file = paste0(settings$Output$Haplotype, "HLA_EM.xlsx"), col.names = TRUE, row.names = FALSE)
 
-
-
-
-
-
-################## SCRATCH ##################
-tst <- HLA.df %>% filter( (DQA1.1 == '02:01' | DQA1.2 == "02:01") &
-                          (DQB1.1 == "02:02" | DQB1.2 == "02:02") & 
-                          (DRB1.1 == "07:01" | DRB1.2 == "07:01") & 
-                          (DRB4.1 == "01:01" | DRB4.2 == "01:01"))
-tst.ref <- HLA.df %>% filter(sample.id %notin% tst$sample.id)
-tst.ref <- tst.ref %>% filter(DRB1.1 != "07:01" & DRB1.2 != "07:01")
