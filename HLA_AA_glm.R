@@ -24,7 +24,7 @@ library(xlsx)
 library(zeallot)
 library(epitools)
 
-########## INITIALIZATION #########
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -68,7 +68,7 @@ AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% subs
 # Read AAs to control
 AAs2control <- settings$AA2control
 
-########## OHE FUNCTIONS ##########
+########### OHE FUNCTIONS########### 
 
 AA2OHE = function(settings, AAs, pos, L, AA_locus, HLA.df){
   
@@ -86,7 +86,7 @@ AA2OHE = function(settings, AAs, pos, L, AA_locus, HLA.df){
     allelesAA <- allelesAA.OG %>% lapply(function(x) strsplit(x, split='\\*') %>% unlist() %>% 
                                            .[2] %>% strsplit(split=':') %>% unlist() %>% .[1:2] %>% paste(collapse=':')) %>% unlist() 
     
-    # Get data with such alleles
+    # Get data with such alleles and creat OHE 
     OHE.AA[paste(L,pos,AA, sep = "_")] <- apply(HLA.df[,c(A1,A2)], 2, function(x,allelesAA) as.integer(x %in% allelesAA), allelesAA) %>%
                            apply(1,function(x) as.integer(x[1] | x[2]))
   }
@@ -96,13 +96,7 @@ AA2OHE = function(settings, AAs, pos, L, AA_locus, HLA.df){
    
 }
 
-controlAAs = function(AAs2control, HLA.df){
-  
-  # For each AA
-  
-}
-
-########## COUNT AMINOACIDS ############
+########### COUNT AMINOACIDS ########### 
 
 count_AA = function(OHE.AA, locus, pos, AAs){
   
@@ -110,7 +104,7 @@ count_AA = function(OHE.AA, locus, pos, AAs){
   OHE.AA.cases <- OHE.AA %>% filter(pheno == 1)
   OHE.AA.controls <- OHE.AA %>% filter(pheno == 0)
   
-  # Parse AA 
+  # Parse amino acids
   AAs2control <- settings$AA2control %>% unlist()
   AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
   
@@ -127,12 +121,12 @@ count_AA = function(OHE.AA, locus, pos, AAs){
                          Ncases = Ncases, FreqCases = FreqCases,
                          Ncontrols = Ncontrols, FreqControls = FreqControls)
   
-  # Return 
+  # Return amino acid counts
   return(AA.count)
   
 }
 
-########### PARSE ALLELES ##########
+########### PARSE ALLELES ########### 
 
 parseAlleles = function(AA.model.df, AA_locus){
   
@@ -149,14 +143,12 @@ parseAlleles = function(AA.model.df, AA_locus){
   # Return 
   return(AA.model.df)
 
-  
 }
 
-############ REGRESSION MODEL ############
+########### REGRESSION MODEL# ########## 
 
 run_GLM = function(OHE.AA, covars.df, L, pos){
   
-  ## Allele Frequency 
   # Merge dataset to include PCs
   AAs2control <- settings$AA2control %>% unlist()
   AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
@@ -250,9 +242,6 @@ for (L in loci){
       # Filter out subjects with low imputation probability
       probs.df_filt <- probs.df %>% filter(get(paste0("prob.", L)) > prob_thr)
       OHE.AA <- OHE.AA %>% filter(sample.id %in% probs.df_filt$sample.id)
-      
-      # Get OHE of control AAs 
-      # OHE.controlAA <- AA2OHE(settings, AAs)
       
       # Fit GLM 
       AA.model.df <- run_GLM(OHE.AA, covars.df, L, pos)
