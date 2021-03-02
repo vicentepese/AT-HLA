@@ -1,7 +1,7 @@
 # AT-HLA: Automatic HLA Analysis
 
-=============
-# Table Of Content
+
+# Table of Contents
 
 # 1. Introduction
 
@@ -19,7 +19,8 @@ These cell-surface proteins are responsible for the regulation of the immune sys
 
 The HLA system is highly polymorphic - that is, there are many different types of alleles. Hence, the importance of studying the association of specific genes with a condition.
 
-# 2. Requirements 
+# 2. Initialization
+## 2.1. Requirements 
 AT-HLA runs on:
 > R 4.0.2 or superior <br>
 
@@ -34,5 +35,16 @@ with the following packages:
 > plyr 1.8.6 <br>
 > haplo.stats 1.8.6 <br>
 
-## 2.1 Initialization 
+## 2.2 Getting started 
+
+Clone the repository anywhere in your local machine with <br>
+```
+git clone https://github.com/vicentepese/AT-HLA
+``` 
+Copy the HLA calls and 
+Copy your HLA calls into the `Data` folder. The file *must* be a *.csv* file whereby each row is a subject and the following columns:
+- *sample.*<span></span>*id*: Subjects' unique identifier.
+- 
+
+
 

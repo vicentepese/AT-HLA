@@ -62,9 +62,51 @@ if (!settings$ethnicity %>% is_empty()){
     filter(sample.id %in% ethnicity.df.filt$sample.id)
 }
 
+################# MERGE DRBs ################# 
+merge_DRB = function(settings, HLA.df){
+  
+  grepl(colnames(HLA.df), pattern = paste(c("DRB3", "DRB4", "DRB5"), collapse = "|")) %>% table() %>% .["TRUE"]/2
+  
+  # Check that DRB3 4 or 5 are present in the dataset
+  if (grepl(colnames(HLA.df), pattern = paste(c("DRB3", "DRB4", "DRB5"), collapse = "|")) %>% any()){
+    
+    # Get columns with the alleles
+    DRB.cols <- HLA.df[, grepl(colnames(HLA.df), pattern = paste(c("DRB3", "DRB4", "DRB5"), collapse = "|"))]
+    
+    # Create columns on the HLA calls
+    HLA.df$DRB.1 <- NA; HLA.df$DRB.2 <- NA
+    
+    # For each triplet/suplet of alleles
+    for (i in 1:nrow(DRB.cols)){
+      
+      # Get non-missing alleles
+      alleles.nonmiss <- which(DRB.cols[i,] != "00:00")
+      
+      # Get alleles
+      locus.ids <- lapply(colnames(DRB.cols)[alleles.nonmiss], function(x) x %>% strsplit("\\.") %>% unlist() %>% head(n=1))%>% unlist()
+      As <- paste(locus.ids, DRB.cols[i,alleles.nonmiss], sep = "*")
+      
+      # If none, or one allele present, correct for format
+      if(length(As) == 0){
+        As <- c("DRB*00:00", "DRB*00:00")
+      } else if (length(As) == 1){
+        As <- c(As, "DRB*00:00")
+      } 
+      
+      # Append 
+      HLA.df$DRB.1[i] <- As[1]; HLA.df$DRB.2[i] <- As[2]
+      
+    }
+    
+  }
+  
+  return(HLA.df)
+  
+}
+
 ################# COMPUTE EM ###################
 
-haplo_EM = function(settings, HLA.df){
+haplo_EM = function(settings, HLA.df, probs.df){
   
   # Parse loci of interest and append phenotypes to HLA calls
   loci <- settings$EM_haplo %>% unlist()
@@ -90,7 +132,7 @@ haplo_EM = function(settings, HLA.df){
   haplo.df <- cbind(data.frame(sample.id = HLA.df$sample.id[subj.idx]), haplotypes[hap1.code,])
   haplo.df2 <- cbind(data.frame(sample.id = HLA.df$sample.id[subj.idx]), haplotypes[hap2.code,])
   haplo.df <- rbind(haplo.df, haplo.df2)
-  
+  # 
   # Remove duplicates (include only carriers / extended haplotype)
   haplo.df <- haplo.df[!duplicated(haplo.df),]
   
@@ -153,8 +195,20 @@ haplo_EM = function(settings, HLA.df){
 
 ################## HAPLOTYPE ANALYSIS  ################## 
 
+# Merge DRB3-4-5
+HLA.df <- merge_DRB(settings = settings, HLA.df)
+
+# Check that DRB3-4-5 were merged and compute mean probability of loci for filtering
+if (c("DRB.1", "DRB.2") %in% colnames(HLA.df) %>% any()){
+  
+  # Compute mean probabilities
+  probs.df$prob.DRB <- apply(probs.df[c(grepl(colnames(probs.df), pattern = paste(c("DRB3", "DRB4", "DRB5"), collapse = "|")))], 
+                             MARGIN = 1, function(x) mean(x))
+  
+}
+
 # Count haplotypes with Expectation Maximization and run Chi2 test
-haplo.count <- haplo_EM(settings, HLA.df)
+haplo.count <- haplo_EM(settings, HLA.df, probs.df)
 
 # Write 
 write.xlsx(x = haplo.count, file = paste0(settings$Output$Haplotype, "HLA_EM.xlsx"), col.names = TRUE, row.names = FALSE)

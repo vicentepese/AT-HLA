@@ -28,6 +28,6 @@
     "allele2control":["DRB1*07:01"],
     "AA2control":[],
     "Haplotype":["DQA1*02:01", "DQB1*02:02", "DRB1*07:01","DRB4*01:01"],
-    "EM_haplo":["DQA1", "DQB1", "DRB1", "DRB4"]
+    "EM_haplo":["DQA1", "DQB1", "DRB1", "DRB"]
 
 }
