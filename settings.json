@@ -11,7 +11,8 @@
         "GLM": "Outputs/GLM/",
         "AA": "Outputs/AA/",
         "AA_GLM":"Outputs/AA_GLM/",
-        "Haplotype":"Outputs/Haplotype/"
+        "Haplotype":"Outputs/Haplotype/",
+        "Zygosity":"Outputs/Zygosity"
     },
 
     "file":{
