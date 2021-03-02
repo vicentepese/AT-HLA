@@ -22,7 +22,7 @@ library(data.table)
 library(xlsx)
 library(plyr)
 
-########### INITIALIZATION ############
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -60,19 +60,16 @@ file.names <- list.files(settings$Output$Zygosity, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "HLA_Zygosity.xlsx")]
 file.remove(file.names)
 
-############ COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ############
+########### COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ########### 
 
 computeACFREQ = function(data, locus, Dx){
-  # Compute heterozigous, homozigous, or absence count. 
-  # Compute allele frequency, count and total.
-  # Compute carrier frequency, count and total.
-  
+
   # Parse alleles
   A1 <- locus %>% paste0('.1'); A2 <- locus %>% paste0('.2')
   alleles <- list(data[, A1], 
                   data[, A2]) %>% unlist()
 
-  # Carrier frequency
+  # Count carrier counts and freqencies
   carriers <- data[,c(A1, A2)]
   carriers.levels <- list(data[, A1], 
                           data[, A2]) %>% unlist() %>% levels()
@@ -84,21 +81,26 @@ computeACFREQ = function(data, locus, Dx){
                            carrierFreq = carriers.freq %>% as.vector(),
                            carrierTotal = nrow(data))
   
-  # Heterozigous, homozigous, and absence count
+  # Count heterozygous, homozygous and non-carrier for each allele
   A0 <- c(); A1 <- c(); A2 <- c();
   for (A in levels(as.factor(alleles))){
+    
+    # Parse data and count
     HH.data <- carriers[which(carriers[,1]==as.character(A) | carriers[,2]==as.character(A)),]
     HH.count <- HH.data %>% apply(1, function(x) x %>% unlist() %>% unique() %>% length()) %>% unlist() %>% table()
+    
+    # Count Hetero, Homo. and non-missing
     A0 <- c(A0, nrow(data) - nrow(HH.data)); A1 <- c(A1,HH.count['2'] %>% unname()); A2 <- c(A2,HH.count['1'] %>% unname())
   }
+  
+  # Replace NAs by 0s
   A1[is.na(A1)] <- 0; A2[is.na(A2)] <- 0; HH.data <- data.frame(allele = levels(as.factor(alleles)), A0 = A0, A1 = A1, A2 = A2)
   
   # Compute frequencies 
   HH.data$FreqHetero <- HH.data$A1 / (HH.data$A0 + HH.data$A1 + HH.data$A2) *100
   HH.data$FreqHomo <- HH.data$A2/ (HH.data$A0 + HH.data$A1 + HH.data$A2)*100
   
-  # Merge 
-
+  # Change column names and return based on diagnosis
   switch (Dx,
           'case' = {
             colnames(HH.data) <- c('allele', paste0(colnames(HH.data) %>% tail(n=-1), rep("Case", length(colnames(HH.data))-1)))
@@ -112,12 +114,14 @@ computeACFREQ = function(data, locus, Dx){
 }
 
 
-############ COMPUTE CHI SQUARE ##############
+########### COMPUTE CHI SQUARE ########### 
 
 computeChi2 = function(ACFREQ.df){
   
-  # Compute Chi2 and OR for each allele
+  # Initialize for loop
   ACFREQ.df$Chi2.Hetero.pval <- NA; ACFREQ.df$OR.Hetero <- NA; ACFREQ.df$Chi2.Homo.pval <- NA; ACFREQ.df$OR.Homo <- NA
+  
+  # Compute Chi2 and OR for each allele
   for (i in 1:nrow(ACFREQ.df)){
     
     # Heterozygous
@@ -139,7 +143,7 @@ computeChi2 = function(ACFREQ.df){
 }
 
 
-############# MAIN LOOP ##############
+########### ZYGOSITY ANALYSIS ########### 
 
 # Get cases and controls and separate datasets
 cases.ids <- covars.df$sample.id[which(covars.df$pheno ==2)]
@@ -147,12 +151,8 @@ controls.ids <- covars.df$sample.id[which(covars.df$pheno ==1)]
 data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
 data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 
-# Initialize multiple-test correction 
-pvals <- c(); l1group <- c(); l2group <- c(); l2locus <- c()
-
 # For each locus 
 loci <- c("A","B","C","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
-
 idx <- 1
 for (locus in loci){
   
@@ -173,7 +173,7 @@ for (locus in loci){
   ACFREQ.df[is.na(ACFREQ.df)] <- 0
   ACFREQ.df <- ACFREQ.df %>% filter(allele %notin% c('','00:00'))
   
-  # Compute Chi2
+  # Compute Chi2 and OR
   ACFREQ.df <- computeChi2(ACFREQ.df)
   ACFREQ.df[ACFREQ.df==Inf] = 'Inf'
   
