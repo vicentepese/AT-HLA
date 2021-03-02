@@ -38,6 +38,11 @@ HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
+# Correct pheno for simplicity
+if (2 %in% covars.df$pheno %>% table() %>% names()){
+  covars.df$pheno <- covars.df$pheno - 1
+}
+
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
@@ -146,8 +151,8 @@ computeChi2 = function(ACFREQ.df){
 ########### ZYGOSITY ANALYSIS ########### 
 
 # Get cases and controls and separate datasets
-cases.ids <- covars.df$sample.id[which(covars.df$pheno ==2)]
-controls.ids <- covars.df$sample.id[which(covars.df$pheno ==1)]
+cases.ids <- covars.df$sample.id[which(covars.df$pheno ==1)]
+controls.ids <- covars.df$sample.id[which(covars.df$pheno ==0)]
 data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
 data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 

@@ -23,7 +23,7 @@ library(xlsx)
 library(plyr)
 library(epitools)
 
-########### INITIALIZATION ############
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -39,7 +39,7 @@ HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
-# Correct pheno for logistic regression 
+# Correct pheno for simplicity
 if (2 %in% covars.df$pheno %>% table() %>% names()){
   covars.df$pheno <- covars.df$pheno - 1
 }
