@@ -190,7 +190,7 @@ haplo_EM = function(settings, HLA.df, probs.df){
   
 }
 
-################## HAPLOTYPE ANALYSIS  ################## 
+########### HAPLOTYPE ANALYSIS  ###########  
 
 # Merge DRB3-4-5 into a single DRB locus
 HLA.df <- merge_DRB(settings = settings, HLA.df)
