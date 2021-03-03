@@ -23,7 +23,7 @@ library(data.table)
 library(xlsx)
 library(plyr)
 
-########## IMPORT #########
+########## IMPORT ########## 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -67,9 +67,9 @@ file.names <- list.files(settings$Output$GLM, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "iter")]
 file.remove(file.names)
 
-########### ONE HOT ENCODING FUNCTIONS ###############
+########## ONE HOT ENCODING FUNCTIONS ########## 
 
-# HLA Parse function
+# OHE for allele
 alleleFreqOHE=function(test_DF){
   test_DF = as.data.frame(test_DF)
   sample.id = rep(test_DF[,1], 2)
@@ -81,7 +81,7 @@ alleleFreqOHE=function(test_DF){
   return(setDF(dcast_HLA))
 }
 
-# HLA Parse function
+# OHE for carrier
 carrierFreqOHE=function(test_DF){
   test_DF = as.data.frame(test_DF)
   sample.id = rep(test_DF[,1], 2)
@@ -95,21 +95,19 @@ carrierFreqOHE=function(test_DF){
   return(setDF(dcast_HLA))
 }
 
-########### ALLELE AND CARRIER FREQUENCY  #################
-
+########## ALLELE AND CARRIER FREQUENCY ########## 
 
 computeACFREQ = function(data, locus, Dx){
-  # Compute heterozigous, homozigous, or absence count. 
-  # Compute allele frequency, count and total.
-  # Compute carrier frequency, count and total.
-  
-  # Carrier frequency
+
+  # Parse alleles
   A1 <- locus %>% paste0('.1'); A2 <- locus %>% paste0('.2')
   alleles <- list(data[, A1], 
                   data[, A2]) %>% unlist()
   carriers <- data[,c(A1, A2)]
   carriers.levels <- list(data[, A1], 
                           data[, A2]) %>% unlist() %>% levels()
+  
+  # Compute Carrier counts and frequencies
   carriers.unique <- apply(carriers, 1, function(x) unique(x)) %>% unlist() %>% as.factor()
   carriers.count <- table (carriers.unique); carriers.count[c(carriers.levels %>% setdiff(carriers.count %>% names()))] <- 0
   carriers.freq <- carriers.count /nrow(data) * 100
@@ -125,11 +123,14 @@ computeACFREQ = function(data, locus, Dx){
     HH.count <- HH.data %>% apply(1, function(x) x %>% unlist() %>% unique() %>% length()) %>% unlist() %>% table()
     A0 <- c(A0, nrow(data) - nrow(HH.data)); A1 <- c(A1,HH.count['2'] %>% unname()); A2 <- c(A2,HH.count['1'] %>% unname())
   }
+  
+  # Replace NAs with 0s for counts
   A1[is.na(A1)] <- 0; A2[is.na(A2)] <- 0; HH.data <- data.frame(allele = levels(as.factor(alleles)), A0 = A0, A1 = A1, A2 = A2)
   
   # Merge 
   ACFREQ.df <- merge(HH.data, carrier.df, by = 'allele')
   
+  # Rename columns and return based on diagnosis
   switch (Dx,
           'case' = {
             colnames(ACFREQ.df) <- c('allele', paste(c('A0','A1','A2','carrierCount', 'carrierFreq', 'carrierTotal'),
@@ -144,7 +145,7 @@ computeACFREQ = function(data, locus, Dx){
   )
 }
 
-########### CONTROL ALLELES ##########
+########## CONTROL ALLELES ########## 
 
 controlAllele = function(as2control, HLA.df){
   
@@ -167,6 +168,7 @@ controlAllele = function(as2control, HLA.df){
     
   }
   
+  # If dataframe is empty, create 
   if(alleleControl.df %>% is_empty()){
     alleleControl.df <- data.frame(sample.id = HLA.df$sample.id)
   }
@@ -192,28 +194,39 @@ runLogisticRegression = function(locus, OHE.carrierFreq.data, covars.df, as2cont
   
   # Run logistic regression on carrier frequency 
   Acarrier.model.df <- data.frame()
+  
+  # For each alleles
   for (allele in alleles.freq){
+    
+    # Create string corresponding to alleles to control
     if (!is_empty(as2control)){
       control.alleles <- paste(' ', as2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
     } else{
       control.alleles <- ''
     }
+    
+    # Create GLM formula as string
     glm.formula <- paste('pheno ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
+    
+    # Fit GLM model
     Acarrier.model <- glm(data = OHE.carrierFreq.data, 
                           formula = as.formula(glm.formula),
                           family = 'binomial', maxit = 100) %>% summary()
+    
+    # Format output
     Acarrier.model.df <- rbind(Acarrier.model.df, c(Acarrier.model$coefficients[2,1], 
                                                     Acarrier.model$coefficients[,dim(Acarrier.model$coefficients)[2]]))
   }
+  
+  # Change column names of output
   colnames(Acarrier.model.df) <- c('allele.COEF.CARRIER', c('Incercept', 'allele', Acarrier.model$coefficients[-c(1,2),] %>% row.names()) %>%
                                      paste('.CARRIER.pval', sep = ''))
+  
+  # Merge to include Alleles
   Acarrier.model.df <- data.frame(allele=alleles.freq, Acarrier.model.df)
-  
-  # Merge 
-  glm.data <- Acarrier.model.df
-  
+
   # Return
-  return(glm.data)
+  return(Acarrier.model.df)
   
 }
 
@@ -342,7 +355,7 @@ for (idx in 2:length(signAlleles)){
   allele <- rbind.fill(allele, signAlleles[[idx]] %>% as.data.frame())
 }
 
-# Write
+# Write outcome
 for (idx in 1:length(HLA.GLM_carriers.list)){
   HLA.GLM_carriers.df <- HLA.GLM_carriers.list[[idx]]; locus <- HLA.GLM_carriers.list %>% names() %>% .[idx]
   write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = locus, 
