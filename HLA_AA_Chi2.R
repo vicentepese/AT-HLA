@@ -23,7 +23,7 @@ library(xlsx)
 library(zeallot)
 library(epitools)
 
-########## INITIALIZATION #########
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -64,7 +64,7 @@ AA_alignment <- read.table(settings$file$AA_alignment, header = TRUE, sep = ',')
 # Convert from full protein to mature protein indexing
 AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
 
-########## EXTRA FUNCTIONS ############
+########### EXTRA FUNCTIONS ########### 
 
 carrierCount = function(settings, data){
   
@@ -113,7 +113,7 @@ carrierCount = function(settings, data){
   
 }
 
-########## AMINO ACID ANALYSIS ##########
+########### AMINO ACID ANALYSIS ########### 
 
 # Get loci, number of cases and controls
 loci <- unique(AA_alignment$locus)
