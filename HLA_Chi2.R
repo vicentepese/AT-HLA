@@ -22,7 +22,7 @@ library(data.table)
 library(xlsx)
 library(plyr)
 
-########### INITIALIZATION ############
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -73,7 +73,7 @@ file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
 file.remove(file.names)
 
 
-############ COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ############
+########### COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ########### 
 
 computeACFREQ = function(data, locus, Dx){
   # Compute heterozigous, homozigous, or absence count. 
@@ -132,7 +132,7 @@ computeACFREQ = function(data, locus, Dx){
 }
 
 
-############ COMPUTE CHI SQUARE ##############
+########### COMPUTE CHI SQUARE ########### 
 
 computeChi2 = function(ACFREQ.df){
   
@@ -212,7 +212,7 @@ computeChi2 = function(ACFREQ.df){
 }
 
 
-############# MAIN LOOP ##############
+########### MAIN LOOP ########### 
 
 # Get cases and controls and separate datasets
 cases.ids <- covars.df$sample.id[which(covars.df$pheno ==2)]
