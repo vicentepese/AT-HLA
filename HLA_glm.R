@@ -22,7 +22,7 @@ library(data.table)
 library(xlsx)
 library(plyr)
 
-########### INITIALIZATION ############
+########### INITIALIZATION ########### 
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
@@ -94,7 +94,7 @@ carrierFreqOHE=function(test_DF){
   return(setDF(dcast_HLA))
 }
 
-########### CONTROL ALLELES ##########
+########### CONTROL ALLELES ########### 
 
 controlAllele = function(settings, data.filt){
   
@@ -184,7 +184,7 @@ computeACFREQ = function(data, locus, Dx){
   )
 }
 
-############ REGRESSION MODEL ############
+########### REGRESSION MODEL ########### 
 
 
 runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.data, covars.df){
@@ -203,21 +203,31 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
   OHE.carrierFreq.data[allele.subset] <- NULL
   alleles.freq <- alleles.freq[!alleles.freq %in% allele.subset]
   
-  # Run logistic regression on allele frequency data
+  # For each allele
   Afreq.model.df <- data.frame()
   for (allele in alleles.freq){
+    
+    # Create string corresponding to alleles to control
     if (length(as2control) > 0){
       control.alleles <- paste(' ', as2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
     } else{
       control.alleles <- ''
     }
+    
+    # Create GLM formula as string and fit GLM
     glm.formula <- paste('pheno ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
+    
+    # Fit GLM model
     Afreq.model <- glm(data = OHE.alleleFreq.data, 
                        formula = as.formula(glm.formula),
                        family = 'binomial', maxit = 100) %>% summary()
+    
+    # Format output
     Afreq.model.df <- rbind(Afreq.model.df, c(Afreq.model$coefficients[2,1], 
                                               Afreq.model$coefficients[,dim(Afreq.model$coefficients)[2]]))
   }
+  
+  # Change column names and bind to add alleles
   colnames(Afreq.model.df) <- c('allele.COEF.ALLELE', 
                                 c('Incercept', 'allele', Afreq.model$coefficients[-c(1,2),] %>% row.names()) %>% paste('.ALLELE.pval', sep = ''))
   Afreq.model.df <- cbind(data.frame(allele=alleles.freq, Afreq.model.df))
@@ -226,23 +236,33 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
   # Run logistic regression on carrier frequency 
   Acarrier.model.df <- data.frame()
   for (allele in alleles.freq){
+    
+    # Create string corresponding to alleles to control
     if (length(as2control) > 0){
       control.alleles <- paste(' ', as2control %>% sapply(function (x) paste('`', x ,'`', sep = '')) %>% paste(collapse = ' + '), sep = '+ ')
     } else{
       control.alleles <- ''
     }
+    
+    # Create GLM formula as string and fit GLM
     glm.formula <- paste('pheno ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
+    
+    # Fit GLM model
     Acarrier.model <- glm(data = OHE.carrierFreq.data, 
                           formula = as.formula(glm.formula),
                           family = 'binomial', maxit = 100) %>% summary()
+    
+    # Format output
     Acarrier.model.df <- rbind(Acarrier.model.df, c(Acarrier.model$coefficients[2,1], 
                                                     Acarrier.model$coefficients[,dim(Acarrier.model$coefficients)[2]]))
   }
+  
+  # Change column names and append alleles
   colnames(Acarrier.model.df) <- c('allele.COEF.CARRIER', c('Incercept', 'allele', Acarrier.model$coefficients[-c(1,2),] %>% row.names()) %>%
                                      paste('.CARRIER.pval', sep = ''))
   Acarrier.model.df <- data.frame(allele=alleles.freq, Acarrier.model.df)
   
-  # Merge 
+  # Merge carrier and alleles models
   glm.data <- merge(Acarrier.model.df, Afreq.model.df, by = 'allele')
   
   # Return
