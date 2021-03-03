@@ -200,7 +200,7 @@ run_GLM = function(OHE.AA, covars.df, L, pos){
   
 }
 
-########## AMINO ACID ANALYSIS ##########
+########### AMINO ACID ANALYSIS ########### 
 
 # Get loci, number of cases and controls
 loci <- unique(AA_alignment$locus)
@@ -246,7 +246,7 @@ for (L in loci){
       # Fit GLM 
       AA.model.df <- run_GLM(OHE.AA, covars.df, L, pos)
       
-      # Count
+      # Count aminoacids
       AA.count <- count_AA(OHE.AA, L, pos, AAs)
       
       # Merge
