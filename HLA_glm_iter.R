@@ -288,7 +288,8 @@ data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 pval <- 0; signAlleles <- list(); 
 
 # HLA Loci
-loci <- c('A','B','C','DQA1', 'DQB1', 'DPB1', 'DRB1','DRB3','DRB4','DRB5')
+loci <- colnames(HLA.df)[grepl(colnames(HLA.df), pattern = "\\.1")]
+loci <- loci %>% lapply(function(x) strsplit(x, split = "\\.") %>% unlist() %>% head(n=1)) %>% unlist() 
 
 # While signifiant alleles
 idx <- 1; 

@@ -224,7 +224,8 @@ data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 pvals <- c(); l1group <- c(); l2group <- c(); l2locus <- c()
 
 # For each locus 
-loci <- c("A","B","C","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
+loci <- colnames(HLA.df)[grepl(colnames(HLA.df), pattern = "\\.1")]
+loci <- loci %>% lapply(function(x) strsplit(x, split = "\\.") %>% unlist() %>% head(n=1)) %>% unlist() 
 
 idx <- 1
 for (locus in loci){

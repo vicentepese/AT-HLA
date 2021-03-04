@@ -71,7 +71,7 @@ do.call(grid.arrange, pl)
 data_plot <- merge(covars.df, probs.df, by = c("FID", "IID","sample.id"))
 
 # Crate array of probs.IDs
-loci <- c("A","B","C","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
+loci <- c("A","B","C","DPA1","DPB1", "DQA1", "DQB1", "DRB1", "DRB3", "DRB4", "DRB5")
 prob.ids <- paste0(rep("prob.", length(loci)), loci)
 
 # Plot PCAs with probs
