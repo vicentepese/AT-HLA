@@ -25,7 +25,7 @@
 
     "prob_thr":0.3,
     "freq_thr":0.05,
-    "ethnicity":["EUR"],
+    "ethnicity":["EUR","SAS","EAS", "AMR","AFR"],
     "allele2control":["DRB1*07:01"],
     "skipAllele":["DQA1*02:01"],
     "AA2control":[],
