@@ -85,15 +85,16 @@ for(eth in settings$ethnicity %>% unlist()){
     Acases <- HLA.df_carriers$pheno %>% table() %>% .["1"]; Acontrols <- HLA.df_carriers$pheno %>% table() %>% .["0"]
     
     # Bind to dataframe
-    alleleCount.df <- rbind(alleleCount.df, c(eth, Acases, Acontrols, Acases/Ncases*100, Acontrols/NControls*100, Ncases, NControls))
+    alleleCount.df <- rbind(alleleCount.df, c(Acases, Acontrols, Acases/Ncases*100, Acontrols/NControls*100, Ncases, NControls))
     
     
   }
   
 }
 
-# Write column names
-colnames(alleleCount.df) <- c("eth", "Ncases","Ncontrols","FreqCases", "FreqControls", "totalCases","totalControls")
+# Append ethnicity and write column names 
+colnames(alleleCount.df) <- c("Ncases","Ncontrols","FreqCases", "FreqControls", "totalCases","totalControls")
+alleleCount.df <- add_column(alleleCount.df, eth = settings$ethnicity %>% unlist(), .before = "Ncases")
 
 # Write output
-
+write.xlsx(x = alleleCount.df, file = paste0(settings$Output$Utils, "HLA_ethnicity_count.xlsx"), row.names = FALSE)
