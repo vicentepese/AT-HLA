@@ -324,6 +324,15 @@ while (pval < 0.05){
     # Rbind with non-corrected alleles 
     HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df_filt %>% rbind.fill(HLA.GLM_carriers.df %>% filter(allele %notin% HLA.GLM_carriers.df_filt$allele))
     
+    # Skip iteration to avoid colinearity
+    for (skipAllele in settings$skipAllele %>% unlist()){
+      L2skip <- skipAllele %>% strsplit(split = "\\*") %>% unlist() %>% head(n=1)
+      if (locus == L2skip){
+        A2skip <- skipAllele %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)
+        HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df_filt[-which(HLA.GLM_carriers.df_filt$allele == A2skip),]
+      }
+    }
+    
     # Append to list
     HLA.GLM_carriers.list[[locus]] <- HLA.GLM_carriers.df_filt 
     for (A in HLA.GLM_carriers.df_filt$allele){
@@ -352,8 +361,10 @@ while (pval < 0.05){
 
 # Format output
 allele <- as.data.frame(signAlleles[[1]]); 
-for (idx in 2:length(signAlleles)){
-  allele <- rbind.fill(allele, signAlleles[[idx]] %>% as.data.frame())
+if (length(signAlleles)>1){
+  for (idx in 2:length(signAlleles)){
+    allele <- rbind.fill(allele, signAlleles[[idx]] %>% as.data.frame())
+  }
 }
 
 # Write outcome
