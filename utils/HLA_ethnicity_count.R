@@ -78,6 +78,10 @@ for(eth in settings$ethnicity %>% unlist()){
     L.ids <- paste0(rep(L2control,2), c(".1",".2"))
     A2control <- allele2control %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)
     
+    # Filter low imputation probability 
+    probs.df_filt <- probs.df %>% filter(get(paste0("prob.",L2control)) > prob_thr)
+    HLA.df_eth <- HLA.df_eth %>% filter(sample.id %in% probs.df_filt$sample.id)
+    
     # Get carriers 
     HLA.df_carriers <- HLA.df_eth %>% filter(get(L.ids[1]) == A2control | get(L.ids[2]) == A2control)
     
@@ -95,6 +99,9 @@ for(eth in settings$ethnicity %>% unlist()){
 # Append ethnicity and write column names 
 colnames(alleleCount.df) <- c("Ncases","Ncontrols","FreqCases", "FreqControls", "totalCases","totalControls")
 alleleCount.df <- add_column(alleleCount.df, eth = settings$ethnicity %>% unlist(), .before = "Ncases")
+
+# Replace NAs with 0
+alleleCount.df[is.na(alleleCount.df)] <- 0
 
 # Write output
 write.xlsx(x = alleleCount.df, file = paste0(settings$Output$Utils, "HLA_ethnicity_count.xlsx"), row.names = FALSE)
