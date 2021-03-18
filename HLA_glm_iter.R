@@ -65,9 +65,11 @@ if (!settings$ethnicity %>% is_empty()){
 
 # Exclude allele
 a2exclude <- settings$allele2exclude %>% unlist();
-locus <- a2exclude %>% strsplit("\\*") %>% unlist() %>% head(n=1); locus.ids <- paste0(rep(locus,2), c(".1", ".2"))
-allele <- a2exclude %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-HLA.df <- HLA.df %>% filter(get(locus.ids[1]) != allele & get(locus.ids[2]) != allele)
+if (!a2exclude %>% is_empty()){
+  locus <- a2exclude %>% strsplit("\\*") %>% unlist() %>% head(n=1); locus.ids <- paste0(rep(locus,2), c(".1", ".2"))
+  allele <- a2exclude %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  HLA.df <- HLA.df %>% filter(get(locus.ids[1]) != allele & get(locus.ids[2]) != allele)
+}
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)

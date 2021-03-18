@@ -27,10 +27,10 @@
     "prob_thr":0.3,
     "freq_thr":0.05,
 
-    "ethnicity":["EUR"],
+    "ethnicity":[],
 
     "allele2control":["DRB1*07:01"],
-    "allele2exclude":["DRB1*07:01", "DRB1*04:02","DRB1*09:01", "DRB1*01:01"],
+    "allele2exclude":[],
     "skipAllele":[],
 
     "AA2control":[],
