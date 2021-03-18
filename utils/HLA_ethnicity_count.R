@@ -53,10 +53,22 @@ HLA.df <- merge(HLA.df, covars.df[,c("sample.id","pheno")], by = "sample.id")
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
-alleles2control <- settings$allele2control
+alleles2control <- settings$allele2control %>% unlist()
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
+
+# Filter out the alleles to exclude 
+for (allele in settings$allele2exclude %>%unlist()){
+  
+  # Parse locus and allele
+  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  
+  # Filter HLA calls 
+  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+  
+}
 
 ########### COUNT PER ETHNICITY ########### 
 
@@ -66,21 +78,22 @@ alleleCount.df <- data.frame()
 # For each ethnicity, count carriers of given alleles
 for(eth in settings$ethnicity %>% unlist()){
   
-  # Parse HLA calls and total number of cases and controls
+  # Parse HLA calls based on ethnicity
   HLA.df_eth <- HLA.df %>% filter(sample.id %in% eth.df$sample.id[which(eth.df$Population == eth)])
-  Ncases <- HLA.df_eth$pheno %>% table() %>% .["1"]; NControls <- HLA.df_eth$pheno %>% table() %>% .["0"]
   
   # Count each of the alleles provided 
-  for (allele2control in settings$allele2control %>% unlist()){
+  for (allele2control in alleles2control %>% unlist()){
     
     # Parse locus and alleles
     L2control <- allele2control %>% strsplit(split = "\\*") %>% unlist() %>% head(n=1)
     L.ids <- paste0(rep(L2control,2), c(".1",".2"))
     A2control <- allele2control %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)
     
-    # Filter low imputation probability 
+    # Filter low imputation probability and compute total number of cases and controls
     probs.df_filt <- probs.df %>% filter(get(paste0("prob.",L2control)) > prob_thr)
     HLA.df_eth <- HLA.df_eth %>% filter(sample.id %in% probs.df_filt$sample.id)
+    Ncases <- HLA.df_eth$pheno %>% table() %>% .["1"]; NControls <- HLA.df_eth$pheno %>% table() %>% .["0"]
+    
     
     # Get carriers 
     HLA.df_carriers <- HLA.df_eth %>% filter(get(L.ids[1]) == A2control | get(L.ids[2]) == A2control)

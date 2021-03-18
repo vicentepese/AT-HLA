@@ -41,7 +41,7 @@ probs.df <- read.csv(settings$file$probs)
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
-alleles2control <- settings$allele2control
+alleles2control <- settings$allele2exclude %>% unlist()
 
 # Filter out the alleles to exclude 
 for (allele in alleles2control){

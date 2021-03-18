@@ -21,6 +21,7 @@ library(readr)
 library(data.table)
 library(xlsx)
 library(plyr)
+library(epitools)
 
 ########### INITIALIZATION ########### 
 
@@ -103,15 +104,18 @@ for (A in allele.ids){
   
   # Comput chi2 and odds-ratio
   chi2.res <- chisq.test(cont.table) %>% .['p.value']
-  OR.res <- (cont.table[1]*cont.table[4])/(cont.table[2]*cont.table[3])
-  
+  OR.res <- oddsratio.wald(cont.table) %>% .[["measure"]]
+  OR <- OR.res[2,1]; OR.LI <- OR.res[2,2]; OR.UL <- OR.res[2,3]
+    
   # Apped to data.frame 
   HeteroA.count <- rbind(HeteroA.count,
-                         c(Ncases, Ncontrols, Ncases/nrow(HLA.df.cases)*100, Ncontrols/nrow(HLA.df.controls)*100, chi2.res, OR.res) %>% unlist())
+                         c(Ncases, Ncontrols, Ncases/nrow(HLA.df.cases)*100,
+                           Ncontrols/nrow(HLA.df.controls)*100, chi2.res,
+                           OR, OR.LI, OR.UL) %>% unlist())
 }
 
 # Add column names 
-colnames(HeteroA.count) <- c("NCases", "Ncontrols","Freq.Cases", "Freq.Controls", "Chi2.pval", "OR")
+colnames(HeteroA.count) <- c("NCases", "Ncontrols","Freq.Cases", "Freq.Controls", "Chi2.pval", "OR", "OR.UpperLim", "OR.LowerLim")
 
 # Append alleles, and adjust p-value
 HeteroA.count <- add_column(HeteroA.count, allele=paste0(rep(locus,nrow(HeteroA.count)), rep("*", nrow(HeteroA.count)), allele.ids), .before = "NCases")
