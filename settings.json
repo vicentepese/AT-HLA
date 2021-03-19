@@ -29,8 +29,8 @@
 
     "ethnicity":[],
 
-    "allele2control":["DRB1*07:01"],
-    "allele2exclude":[],
+    "allele2control":["DRB1*04:02","DRB1*04:05", "DRB1*08:01", "DRB1*16:01"],
+    "allele2exclude":["DRB1*07:01"],
     "skipAllele":[],
 
     "AA2control":[],

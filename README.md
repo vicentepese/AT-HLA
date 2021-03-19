@@ -63,7 +63,7 @@ A typical Input Data should look like:<br>
 
 ### 2.2.2. Imputation Probabilities
 
-An imputation probability cut-off is performed by AT-HLA &ndash; every subject below a probability threshold will be excluded. This threshold is computed by locus - that is, if a subject has an HLA-A imputation probability lower than the threshold, it will be excluded in the analysis of the HLA-A locus. However, if the same subject has a HLA-DRB1 imputation probability higher than the threshold, it will not be excluded of the HLA-DRB1 analysis. <br>
+An imputation probability cut-off is performed by AT-HLA &ndash; every subject below a probability threshold will be excluded. This threshold is computed by locus &ndash; that is, if a subject has an HLA-A imputation probability lower than the threshold, it will be excluded in the analysis of the HLA-A locus. However, if the same subject has a HLA-DRB1 imputation probability higher than the threshold, it will not be excluded of the HLA-DRB1 analysis. <br>
 <br>
 Identically to the Input Data,  a *.csv* file in which each row corresponds to a unique subject must be provided. Please consider:
 - Subjects' unique identifiers must be stored in a column named *<span>sample</span>.id*. Such identifiers must match those of the Input Data.
@@ -101,7 +101,6 @@ AT-HLA allows ethnic-specific analyses. Ethnicity should be inputed to AT-HLA in
 - Subjects' ethnicity must be stored in a column named *Population*.
 
 A typical ethnicity file should look like:
-A typical Covariates file should look like this
 |<span>sample</span>.id   | Population     | 
 | ----------------------- | ------- | 
 | ID001                   | EUR     | 
@@ -110,7 +109,7 @@ A typical Covariates file should look like this
 | .....                   | .....   | 
 | ID001                   | SAS     | 
 
-Note that AT-HLA does not require specific labels for *Population*.
+Note that AT-HLA does not require specific labels for *Population*. The provided example uses the ethnicities labeled by [1000 Genomes]()
 
 ### 2.2.3. Settings
 
@@ -119,15 +118,59 @@ AT-HLA follows a *settings* logic. This means that paths, files and variables ar
   - *HLA_Data* (string): Full path to the HLA data to be analyzed (i.e. Input Data)
   - *covars* (string): Full path to the covariates of teh HLA data
   - *probs* (string): Full path to the imputation probabilities of the HLA data.
-- *prob_thr*: Probability threshold. See section 2.2.2. If the Input Data is unimputed, by set this variableto 0 and no subjects will be excluded.
-- *freq_thr*: Frequency threshold. Only applied for p-value correction. P-values belonging to alleles for which the carrier/allele frequenci is lower than the threshold both in cases and controls, will not be corrected  (include FDR) *****. This allows a less stringent P-value correction.
+- *prob_thr* (float): Probability threshold. See section 2.2.2. If the Input Data is unimputed, by set this variableto 0 and no subjects will be excluded.
+- *freq_thr* (float): Frequency threshold. Only applied for p-value correction. P-values belonging to alleles for which the carrier/allele frequenci is lower than the threshold both in cases and controls, will not be corrected  (include FDR) *****. This allows a less stringent P-value correction.
 
 Optional settings:
 - *file*: 
   - *ethnicity* (string): Full path to the HLA data subjects' ethnicity.
-- *ethnicity*: If the ethnicity of subject is provided, select the specific ethnicities (provided by the ethnicity file) of interest to perform the analysis (e.g.: EUR, SAS, EAS, AFR, AMR).
+- *ethnicity* (list of strings): If the ethnicity of subject is provided, select the specific ethnicities (provided by the ethnicity file) of interest to perform the analysis (e.g.: EUR, SAS, EAS, AFR, AMR).
+- *allele2exclude* (list of strings): The alleles written in this list will be removed from the analysis &ndash; that is, only negative subjects will be considered for the analysis. Alleles must be written into the list with a *LOCUS*\*XX:XX nomenclature (e.g. DRB1\*07:01, DRB1\*04:02)
 
 Additional optional settings will be described in each script's section.
+
+# 3. HLA Association Analysis
+An HLA association analysis allows to identify specific alleles that may be associated with a determined condition.  
+
+## 3.1 Allele Association Analysis
+
+### Command:
+From directory of the cloned repository: <br>
+```
+Rscript HLA_Chi2.R
+```
+
+### Description:
+Computes a Chi-square and Fisher's Exact Test in alleles and carrier counts. P-values are locus-wise False Discovery Rate (FDR) corrected by the Benjamini–Yekutieli procedure. The counts of homozygous, heterozygous, non-carriers, and frequencies of cases and controls is included in the output. 
+
+### Outputs and results interpretation:
+The script will produce two outputs, a carrier and an allelic association study:
+- Carrier Association Analysis: *Outputs/Chi2/HLA_AnalysisCarriers.xlsx*
+- Allele Association Analysis:  *Outputs/Chi2/HLA_AnalysisAlleles.xlsx*
+
+
+Both file will contain the following common columns:
+- *allele*: Allele of study
+- *FishersPVAL*: Fisher's Exact Test P-value
+- *FishersPVAL_CORR*: Fisher's Exact Test P-value FDR corrected
+- *FishersOR*: Fisher's Odd Ratios (OR)
+- *FishersLI*: Fisher's OR Lower 95% Confidence Interval
+- *FishersUI*: FIsher's OR Upper 95% Confidence Interval
+- *ChiPVAL*: Chi-square P-value
+- *ChiPVAL_CORR*: Chi-square P-value FDR corrected
+- *OR*: Odds Ratio computed directly from the contingency matrix
+- *A0 / A1 / A2 in Case/Control*: In order, these columns correspond to the non-carrier, heterozygus, and homozygous counts in cases and controls.
+- *carrier/alleleFreq*: Carrier or allele frequency.
+- *carrier/alleleCount*: Count of the carrier or allele specified in *allele*.
+- *carreir/alleleTotal*: Total number of carriers or alleles included in the analysis.
+  
+### Additional settings:
+
+# 4. Haplotype Analyisis
+
+# 5. Zygosity Analysis
+
+# 6. Amino Acid Association Analysis
 
 
 
