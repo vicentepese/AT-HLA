@@ -94,6 +94,8 @@ A typical Covariates file should look like this
 | .....                   | .....   | .....  | ..... | .....  |
 | ID001                   | 0.158   | -0.258 | ..... | 1      |
 
+**NOTE**: At least the first three Principal Components (i.e., PC1, PC2,and PC3) must be included in the file &ndash; otherwise, scripts requiring covariates will not be functional.
+
 ### 2.2.4 Ethnicity (optional)
 
 AT-HLA allows ethnic-specific analyses. Ethnicity should be inputed to AT-HLA in the same format as Input Data, whereby each row corresponds a single subject's instance. Please consider:
@@ -119,7 +121,7 @@ AT-HLA follows a *settings* logic. This means that paths, files and variables ar
   - *covars* (string): Full path to the covariates of teh HLA data
   - *probs* (string): Full path to the imputation probabilities of the HLA data.
 - *prob_thr* (float): Probability threshold. See section 2.2.2. If the Input Data is unimputed, by set this variableto 0 and no subjects will be excluded.
-- *freq_thr* (float): Frequency threshold. Only applied for p-value correction. P-values belonging to alleles for which the carrier/allele frequenci is lower than the threshold both in cases and controls, will not be corrected  (include FDR) *****. This allows a less stringent P-value correction.
+- *freq_thr* (float): Frequency threshold. Only applied for P-value correction. P-values belonging to alleles for which the carrier/allele frequencies both in cases and controls is lower than the threshold both in cases and controls, will not be corrected. This allows a less stringent P-value correction.
 
 Optional settings:
 - *file*: 
@@ -134,22 +136,22 @@ An HLA association analysis allows to identify specific alleles that may be asso
 
 ## 3.1 Allele Association Analysis
 
-### Command:
+### 3.1.1 Command:
 From directory of the cloned repository: <br>
 ```
 Rscript HLA_Chi2.R
 ```
 
-### Description:
+### 3.1.2 Description:
 Computes a Chi-square and Fisher's Exact Test in alleles and carrier counts. P-values are locus-wise False Discovery Rate (FDR) corrected by the Benjamini–Yekutieli procedure. The counts of homozygous, heterozygous, non-carriers, and frequencies of cases and controls is included in the output. 
 
-### Outputs and results interpretation:
+### 3.1.3 Outputs and results interpretation:
 The script will produce two outputs, a carrier and an allelic association study:
 - Carrier Association Analysis: *Outputs/Chi2/HLA_AnalysisCarriers.xlsx*
 - Allele Association Analysis:  *Outputs/Chi2/HLA_AnalysisAlleles.xlsx*
 
 
-Both file will contain the following common columns:
+Both files will contain the following common columns:
 - *allele*: Allele of study
 - *FishersPVAL*: Fisher's Exact Test P-value
 - *FishersPVAL_CORR*: Fisher's Exact Test P-value FDR corrected
@@ -163,8 +165,65 @@ Both file will contain the following common columns:
 - *carrier/alleleFreq*: Carrier or allele frequency.
 - *carrier/alleleCount*: Count of the carrier or allele specified in *allele*.
 - *carreir/alleleTotal*: Total number of carriers or alleles included in the analysis.
-  
-### Additional settings:
+
+## 3.2 Logistic Model Analysis
+
+### 3.2.1 Command
+From directory of the cloned repository: <br>
+```
+Rscript HLA_glm.R
+```
+
+### 3.2.2 Description 
+Fits a Generalized Logistic Model (GLM) to each alleles, controlling by the first three Principal Components. P-values are FDR corrected and through BY procedure. Counts of homozygous, heterozygous, non-carriers and frequencies in cases and controls are computed as well. 
+
+### 3.2.3 Outputs and results interpretation
+The script will produce two outputs, a carrier and an allelic GLM association analysis:
+- Carrier GLM Association Study: *Outputs/GLM/HLA_Carriers.xlsx*
+- Allele GLM Association Study: *Outputs/GLM/HLA_Alleles.xlsx*
+
+Both files will contain the following common columns:
+- *allele*: Allele of study
+- *allele.COEF*: GLM coeffiecient of the allele 
+- *Intercept.pval*: P-value of the intercept
+- *allele.pval*: P-value of the allele
+- *allele.pval.CORR*: P-value of the allele FDR corrected
+- *PC1/2/3.pval*: P-alue of the PC1,PC2, and PC3
+
+For allele and carrier counts column reference, please see Section 3.1: Outputs and results interpretation.
+
+### 3.2.4 Additional settings
+The following additional settings can be adjusted through `settings.json`:
+- *allele2control* (list of strings): Controls in the GLM model for the specified alleles in the list. 
+
+**Note**: The nomenclature *must* be LOCUS\*XX:XX (see Section 2.2.3: *allele2exclude*). P-values of the controlled alleles will be displayed in the output as *LOCUS\*XX:XX.pval*
+
+## 3.3 Iterative Logistic Model Analysis
+
+### 3.3.1 Command
+From directory of the cloned repository: <br>
+```
+Rscript HLA_glm_iter.R
+```
+
+### 3.3.2 Description
+Computes a Generalized Logistic model for each allele, and iteratively will control for the most BY-FDR corrected significant allele of the previous iteration until no significant alleles are left. Counts of homozygous, heterozygous, non-carriers and frequencies in cases and controls are computed as well.
+
+### 3.3.3. Outputs and results interpretation
+The script will produce a carrier iterative GLM association analysis:
+- Iterative Carrier GLM Association: *Outputs/GLM/HLA_GLM_Carriers_iter.xlsx*
+
+
+The output format is the same as in Section 3.2.3. In addition, the output include an additional Excel Sheet named *Significant_alleles* that includes the most sigficant allele for each iteration, from top to bottom.  
+
+### 3.3.4 Additional settings
+The following additional settings can be adjusted through `settings.json`:
+- *allele2control* (list of strings): Controls in the GLM model for the specified alleles in the list for all iterations (including the first iteration).
+- *skipAllele* (list of strings): Ignores the alleles defined in the list. This is because sometimes alleles can be colinear, and previously controlled alleles will become non-significant &ndash; skipping such alleles will avoid redundant results.
+
+**Note**: The nomenclature *must* be LOCUS\*XX:XX (see Section 2.2.3: *allele2exclude*). 
+
+
 
 # 4. Haplotype Analyisis
 
