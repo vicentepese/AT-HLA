@@ -111,7 +111,7 @@ A typical ethnicity file should look like:
 | .....                   | .....   | 
 | ID001                   | SAS     | 
 
-Note that AT-HLA does not require specific labels for *Population*. The provided example uses the ethnicities labeled by [1000 Genomes]()
+Note that AT-HLA does not require specific labels for *Population*. The provided example uses the ethnicities labeled by [1000 Genomes](https://www.internationalgenome.org/category/population/)
 
 ### 2.2.3. Settings
 
@@ -213,7 +213,6 @@ Computes a Generalized Logistic model for each allele, and iteratively will cont
 The script will produce a carrier iterative GLM association analysis:
 - Iterative Carrier GLM Association: *Outputs/GLM/HLA_GLM_Carriers_iter.xlsx*
 
-
 The output format is the same as in Section 3.2.3. In addition, the output includes an additional Excel Sheet named *Significant_alleles* that includes the most significant allele for each iteration, from top to bottom.  
 
 ### 3.3.4 Additional settings
@@ -223,9 +222,21 @@ The following additional settings can be adjusted through `settings.json`:
 
 **Note**: The nomenclature *must* be LOCUS\*XX:XX (see Section 2.2.3: *allele2exclude*). 
 
-
-
 # 4. Haplotype Analysis
+
+## 4.1. Haplotype count 
+
+### 4.1.1. Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_haplotype.R
+```
+
+### 4.1.2 Decription
+Provided an haplotype, it performs a count of heterozygous and homozygous cases and controls, and will test agains a reference of non-carriers.
+
+### 4.1.3  Outputs and results interpretation
+
 
 # 5. Zygosity Analysis
 

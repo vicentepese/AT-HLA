@@ -105,16 +105,18 @@ countHaplo = function(settings, HLA.df, covars.df){
   ref.haplo <- HLA.df %>% filter(sample.id %notin% hetero.haplo$sample.id & sample.id %notin% homo.haplo$sample.id)
   
   # Parse alleles to exclude
-  allele2control <- settings$allele2control %>% unlist()
-  loci <- allele2control %>% lapply(function(x) x %>% strsplit(split = "\\*") %>% unlist() %>% head(n=1)) %>% unlist()
-  alleles <- allele2control %>% lapply(function(x) x %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)) %>% unlist()
-  
-  # Filter out reference based on allele 2 exclude in setttings
-  for (i in 1:length(loci)){
-    locus.id <- c(paste0(loci[i], ".1"), paste0(loci[i], ".2"))
-    ref.haplo <- ref.haplo %>% filter(get(locus.id[1]) != alleles[i] & get(locus.id[2]) != alleles[i])
+  if (! settings$allele2exclude %>% is_empty()){
+    allele2control <- settings$allele2exclude %>% unlist()
+    loci <- allele2control %>% lapply(function(x) x %>% strsplit(split = "\\*") %>% unlist() %>% head(n=1)) %>% unlist()
+    alleles <- allele2control %>% lapply(function(x) x %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)) %>% unlist()
+    
+    # Filter out reference based on allele 2 exclude in setttings
+    for (i in 1:length(loci)){
+      locus.id <- c(paste0(loci[i], ".1"), paste0(loci[i], ".2"))
+      ref.haplo <- ref.haplo %>% filter(get(locus.id[1]) != alleles[i] & get(locus.id[2]) != alleles[i])
+    }
   }
-  
+
   # Parse cases and controls ids
   cases.ids <- covars.df %>% filter(pheno ==1) %>% .["sample.id"] %>% unlist(); Ncases <- cases.ids %>% length()
   controls.ids <- covars.df %>% filter(pheno ==0) %>% .["sample.id"] %>% unlist(); Ncontrols <- controls.ids %>% length()
