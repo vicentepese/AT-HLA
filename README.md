@@ -42,11 +42,11 @@ git clone https://github.com/vicentepese/AT-HLA
 
 ## 2.2. Initilization
 
-Prior to utilizing AT-HLA, the Input Data, and Settings must be intialized. 
+Prior to utilizing AT-HLA, the Input Data, and Settings must be initialized. 
 
 ### 2.2.1. Input Data
 
-The HLA data (i.e. Input Data) must be provided in a *.csv* file. In addition, it must follow a specific format whereby each row correspond to a unique instance or subject, and pairs of alleles are separate in contiguous columns. Please consider the following:
+The HLA data (i.e. Input Data) must be provided in a *.csv* file. In addition, it must follow a specific format whereby each row corresponds to a unique instance or subject, and pairs of alleles are separate in contiguous columns. Please consider the following:
 - Subjects' unique identifiers must be stored in a column named *<span>sample</span>.id*.
 - Each pair of alleles must be named in the format of "*LOCUS*.1", "*LOCUS*.2" whereby *LOCUS* is any of the HLA loci. The total number of columns should be *1+2N* where N is the number of loci &ndash; columns with different names will be ignored.
 
@@ -63,7 +63,7 @@ A typical Input Data should look like:<br>
 
 ### 2.2.2. Imputation Probabilities
 
-An imputation probability cut-off is performed by AT-HLA &ndash; every subject below a probability threshold will be excluded. This threshold is computed by locus &ndash; that is, if a subject has an HLA-A imputation probability lower than the threshold, it will be excluded in the analysis of the HLA-A locus. However, if the same subject has a HLA-DRB1 imputation probability higher than the threshold, it will not be excluded of the HLA-DRB1 analysis. <br>
+An imputation probability cut-off is performed by AT-HLA &ndash; every subject below a probability threshold will be excluded. This threshold is computed by locus &ndash; that is, if a subject has an HLA-A imputation probability lower than the threshold, it will be excluded in the analysis of the HLA-A locus. However, if the same subject has an HLA-DRB1 imputation probability higher than the threshold, it will not be excluded from the HLA-DRB1 analysis. <br>
 <br>
 Identically to the Input Data,  a *.csv* file in which each row corresponds to a unique subject must be provided. Please consider:
 - Subjects' unique identifiers must be stored in a column named *<span>sample</span>.id*. Such identifiers must match those of the Input Data.
@@ -83,7 +83,7 @@ A typical Imputation Probabilities file should look like:
 A covariates *.csv* file in which each row corresponds to a unique subject must be provided. This file contains the phenotype of the subjects. Please consider:
 - Subjects' unique identifiers must be stored in a column named *<span>sample</span>.id*. Such identifiers must match those of the Input Data.
 - Phenotype type must be stored in a column named *pheno*, where 1=cases and 0=controls, or 2=cases and 1=controls.
-- *Optional*; only for Generalized Linear Models (GLM) anylises: Principal Components must be provided in the form of *PCX* whereby *X* is the Principal Component number. 
+- *Optional*; only for Generalized Linear Models (GLM) analyses: Principal Components must be provided in the form of *PCX* whereby *X* is the Principal Component number. 
 
 A typical Covariates file should look like this
 |<span>sample</span>.id   | PC1     | PC2    | ..... | pheno  |
@@ -94,11 +94,11 @@ A typical Covariates file should look like this
 | .....                   | .....   | .....  | ..... | .....  |
 | ID001                   | 0.158   | -0.258 | ..... | 1      |
 
-**NOTE**: At least the first three Principal Components (i.e., PC1, PC2,and PC3) must be included in the file &ndash; otherwise, scripts requiring covariates will not be functional.
+**NOTE**: At least the first three Principal Components (i.e., PC1, PC2, and PC3) must be included in the file &ndash; otherwise, scripts requiring covariates will not be functional.
 
 ### 2.2.4 Ethnicity (optional)
 
-AT-HLA allows ethnic-specific analyses. Ethnicity should be inputed to AT-HLA in the same format as Input Data, whereby each row corresponds a single subject's instance. Please consider:
+AT-HLA allows ethnic-specific analyses. Ethnicity should be inputted to AT-HLA in the same format as Input Data, whereby each row corresponds to a single subject's instance. Please consider:
 - Subjects' unique identifiers must be stored in a column named *<span>sample</span>.id*. Such identifiers must match those of the Input Data.
 - Subjects' ethnicity must be stored in a column named *Population*.
 
@@ -115,24 +115,24 @@ Note that AT-HLA does not require specific labels for *Population*. The provided
 
 ### 2.2.3. Settings
 
-AT-HLA follows a *settings* logic. This means that paths, files and variables are stored into `settings.json`. In order to use AT-HLA, please fill-up the following sections in `settings.json`:
+AT-HLA follows a *settings* logic. This means that paths, files, and variables are stored in `settings.json`. To use AT-HLA, please fill-up the following sections in `settings.json`:
 - *file*:
   - *HLA_Data* (string): Full path to the HLA data to be analyzed (i.e. Input Data)
-  - *covars* (string): Full path to the covariates of teh HLA data
+  - *covars* (string): Full path to the covariates of the HLA data
   - *probs* (string): Full path to the imputation probabilities of the HLA data.
-- *prob_thr* (float): Probability threshold. See section 2.2.2. If the Input Data is unimputed, by set this variableto 0 and no subjects will be excluded.
-- *freq_thr* (float): Frequency threshold. Only applied for P-value correction. P-values belonging to alleles for which the carrier/allele frequencies both in cases and controls is lower than the threshold both in cases and controls, will not be corrected. This allows a less stringent P-value correction.
+- *prob_thr* (float): Probability threshold. See section 2.2.2. If the Input Data is unimputed, by setting this variable to 0 and no subjects will be excluded.
+- *freq_thr* (float): Frequency threshold. Only applied for P-value correction. P-values belonging to alleles for which the carrier/allele frequencies both in cases and controls are lower than the threshold both in cases and controls, will not be corrected. This allows a less stringent P-value correction.
 
 Optional settings:
 - *file*: 
   - *ethnicity* (string): Full path to the HLA data subjects' ethnicity.
-- *ethnicity* (list of strings): If the ethnicity of subject is provided, select the specific ethnicities (provided by the ethnicity file) of interest to perform the analysis (e.g.: EUR, SAS, EAS, AFR, AMR).
+- *ethnicity* (list of strings): If the ethnicity of subjects is provided, select the specific ethnicities (provided by the ethnicity file) of interest to perform the analysis (e.g.: EUR, SAS, EAS, AFR, AMR).
 - *allele2exclude* (list of strings): The alleles written in this list will be removed from the analysis &ndash; that is, only negative subjects will be considered for the analysis. Alleles must be written into the list with a *LOCUS*\*XX:XX nomenclature (e.g. DRB1\*07:01, DRB1\*04:02)
 
 Additional optional settings will be described in each script's section.
 
 # 3. HLA Association Analysis
-An HLA association analysis allows to identify specific alleles that may be associated with a determined condition.  
+An HLA association analysis allows identifying specific alleles that may be associated with a determined condition.  
 
 ## 3.1 Allele Association Analysis
 
@@ -143,10 +143,10 @@ Rscript HLA_Chi2.R
 ```
 
 ### 3.1.2 Description:
-Computes a Chi-square and Fisher's Exact Test in alleles and carrier counts. P-values are locus-wise False Discovery Rate (FDR) corrected by the Benjamini–Yekutieli procedure. The counts of homozygous, heterozygous, non-carriers, and frequencies of cases and controls is included in the output. 
+Computes a Chi-square and Fisher's Exact Test in alleles and carrier counts. P-values are locus-wise False Discovery Rate (FDR) corrected by the Benjamini–Yekutieli procedure. The counts of homozygous, heterozygous, non-carriers, and frequencies of cases and controls are included in the output. 
 
 ### 3.1.3 Outputs and results interpretation:
-The script will produce two outputs, a carrier and an allelic association study:
+The script will produce two outputs, a carrier, and an allelic association study:
 - Carrier Association Analysis: *Outputs/Chi2/HLA_AnalysisCarriers.xlsx*
 - Allele Association Analysis:  *Outputs/Chi2/HLA_AnalysisAlleles.xlsx*
 
@@ -161,10 +161,10 @@ Both files will contain the following common columns:
 - *ChiPVAL*: Chi-square P-value
 - *ChiPVAL_CORR*: Chi-square P-value FDR corrected
 - *OR*: Odds Ratio computed directly from the contingency matrix
-- *A0 / A1 / A2 in Case/Control*: In order, these columns correspond to the non-carrier, heterozygus, and homozygous counts in cases and controls.
+- *A0 / A1 / A2 in Case/Control*: In order, these columns correspond to the non-carrier, heterozygous, and homozygous counts in cases and controls.
 - *carrier/alleleFreq*: Carrier or allele frequency.
 - *carrier/alleleCount*: Count of the carrier or allele specified in *allele*.
-- *carreir/alleleTotal*: Total number of carriers or alleles included in the analysis.
+- *carrier/alleleTotal*: Total number of carriers or alleles included in the analysis.
 
 ## 3.2 Logistic Model Analysis
 
@@ -175,16 +175,16 @@ Rscript HLA_glm.R
 ```
 
 ### 3.2.2 Description 
-Fits a Generalized Logistic Model (GLM) to each alleles, controlling by the first three Principal Components. P-values are FDR corrected and through BY procedure. Counts of homozygous, heterozygous, non-carriers and frequencies in cases and controls are computed as well. 
+Fits a Generalized Logistic Model (GLM) to each allele, controlling by the first three Principal Components. P-values are FDR corrected and through BY procedure. Counts of homozygous, heterozygous, non-carriers, and frequencies in cases and controls are computed as well. 
 
 ### 3.2.3 Outputs and results interpretation
-The script will produce two outputs, a carrier and an allelic GLM association analysis:
+The script will produce two outputs, a carrier, and an allelic GLM association analysis:
 - Carrier GLM Association Study: *Outputs/GLM/HLA_Carriers.xlsx*
 - Allele GLM Association Study: *Outputs/GLM/HLA_Alleles.xlsx*
 
 Both files will contain the following common columns:
 - *allele*: Allele of study
-- *allele.COEF*: GLM coeffiecient of the allele 
+- *allele.COEF*: GLM coefficient of the allele 
 - *Intercept.pval*: P-value of the intercept
 - *allele.pval*: P-value of the allele
 - *allele.pval.CORR*: P-value of the allele FDR corrected
@@ -207,25 +207,25 @@ Rscript HLA_glm_iter.R
 ```
 
 ### 3.3.2 Description
-Computes a Generalized Logistic model for each allele, and iteratively will control for the most BY-FDR corrected significant allele of the previous iteration until no significant alleles are left. Counts of homozygous, heterozygous, non-carriers and frequencies in cases and controls are computed as well.
+Computes a Generalized Logistic model for each allele, and iteratively will control for the most BY-FDR corrected significant allele of the previous iteration until no significant alleles are left. Counts of homozygous, heterozygous, non-carriers, and frequencies in cases and controls are computed as well.
 
 ### 3.3.3. Outputs and results interpretation
 The script will produce a carrier iterative GLM association analysis:
 - Iterative Carrier GLM Association: *Outputs/GLM/HLA_GLM_Carriers_iter.xlsx*
 
 
-The output format is the same as in Section 3.2.3. In addition, the output include an additional Excel Sheet named *Significant_alleles* that includes the most sigficant allele for each iteration, from top to bottom.  
+The output format is the same as in Section 3.2.3. In addition, the output includes an additional Excel Sheet named *Significant_alleles* that includes the most significant allele for each iteration, from top to bottom.  
 
 ### 3.3.4 Additional settings
 The following additional settings can be adjusted through `settings.json`:
 - *allele2control* (list of strings): Controls in the GLM model for the specified alleles in the list for all iterations (including the first iteration).
-- *skipAllele* (list of strings): Ignores the alleles defined in the list. This is because sometimes alleles can be colinear, and previously controlled alleles will become non-significant &ndash; skipping such alleles will avoid redundant results.
+- *skipAllele* (list of strings): Ignores the alleles defined in the list. This is because sometimes alleles can be collinear, and previously controlled alleles will become non-significant &ndash; skipping such alleles will avoid redundant results.
 
 **Note**: The nomenclature *must* be LOCUS\*XX:XX (see Section 2.2.3: *allele2exclude*). 
 
 
 
-# 4. Haplotype Analyisis
+# 4. Haplotype Analysis
 
 # 5. Zygosity Analysis
 
