@@ -122,8 +122,11 @@ file:
     covars        [string]        Full path to the covariates of the HLA data
     probs         [string]        Full path to the imputation probabilities of the HLA data.
     probs_thr     [float]         Probability threshold. See section 2.2.2. If the Input Data is
-                                  unimputed, by setting this variable to 0 and no subjects will be excluded.
-    freq_thr      [float]         Frequency threshold. Only applied for P-value correction. P-values belonging to alleles for which the carrier/allele frequencies both in cases and controls are lower than the threshold both in cases and controls, will not be corrected. This allows a less stringent P-value correction.
+                                  unimputed, by setting this variable to 0 and no subjects will be
+                                  excluded.
+    freq_thr      [float]         Frequency threshold. Only applied for P-value correction. P-values
+                                   belonging to alleles for which the carrier/allele frequencies both in cases and controls are lower than the threshold both in cases and controls, will not be corrected.
+                                    This allows a less stringent P-value correction.
   
 ```
 - *file*:
