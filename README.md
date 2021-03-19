@@ -235,7 +235,59 @@ Rscript HLA_haplotype.R
 ### 4.1.2 Decription
 Provided an haplotype, it performs a count of heterozygous and homozygous cases and controls, and will test agains a reference of non-carriers.
 
-### 4.1.3  Outputs and results interpretation
+### 4.1.3 Settings
+Please, in addition to the necessary settings described in Section 2.2.3 include:
+- *Haplotype* (list of strings): haplotypes, i.e list of alleles.
+
+**Note**: The nomenclature *must* be LOCUS\*XX:XX (see Section 2.2.3: *allele2exclude*). 
+
+### 4.1.4  Outputs and results interpretation
+The script will produce a haplotype count association output:
+- Haplotype association: *Outputs/Haplotype/HLA_Haplotype.xlsx*
+
+The file contains the following columns:
+- *LOCUS.1/.2*: Allele 1 and allele 2 
+- *Ncases / Ncontrols*: Number of cases/controls carrying the haplotype
+- *FreqCases / FreqControls*: Frequency of cases/controls carrying the haplotype
+- *OR*: Odds Ratio computed from directly from the contingency matrix
+- *chi.sq*: Chi-square P-value.
+
+### 4.1.5 Additional settings
+The following additional settings can be adjusted through `settings.json`:
+- *allele2exclude* (list of strings): removes the from the reference the subjects carrying the specified alleles.
+
+## 4.1. Expectation Maximization
+
+### 4.1.1. Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_EM.R
+```
+
+### 4.1.2 Decription
+Provided an set of loci, it performs the Expectation Maximization (EM) algorithm and predict haplotype frequencies.
+
+### 4.1.3 Settings
+Please, in addition to the necessary settings described in Section 2.2.3 include:
+- *EM_haplo* (list of strings): haplotypes, i.e list of loci.
+
+**Note**: The nomenclature *must* be LOCUS (e.g, DRB1, DPB1)
+
+### 4.1.4  Outputs and results interpretation
+The script will produce a EM haplotype count association output:
+- EM Haplotype association: *Outputs/Haplotype/HLA_EM.xlsx*
+
+The file contains the following columns:
+- *LOCUS*: Allele of the locus/loci 
+- *Count.Cases/Controls*: Number of cases/controls carrying the haplotype
+- *FreqCases / FreqControls*: Frequency of cases/controls carrying the haplotype
+- *OR*: Odds Ratio computed from directly from the contingency matrix
+- *Chi2*: Chi-square P-value.
+- *RefCases/Controls*: Number of cases and controls not carrying the haplotype.
+
+### 4.1.5 Additional settings
+The following additional settings can be adjusted through `settings.json`:
+- *allele2exclude* (list of strings): removes the from the reference the subjects carrying the specified alleles.
 
 
 # 5. Zygosity Analysis

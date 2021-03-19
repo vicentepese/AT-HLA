@@ -62,6 +62,19 @@ if (!settings$ethnicity %>% is_empty()){
     filter(sample.id %in% ethnicity.df.filt$sample.id)
 }
 
+# Filter out the alleles to exclude 
+alleles2control <- settings$allele2exclude %>% unlist()
+for (allele in alleles2control){
+  
+  # Parse locus and allele
+  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  
+  # Filter HLA calls 
+  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+  
+}
+
 ################# MERGE DRBs ################# 
 
 merge_DRB = function(settings, HLA.df){

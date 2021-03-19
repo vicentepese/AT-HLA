@@ -62,6 +62,19 @@ if (!settings$ethnicity %>% is_empty()){
     filter(sample.id %in% ethnicity.df.filt$sample.id)
 }
 
+# Filter out the alleles to exclude 
+alleles2control <- settings$allele2exclude %>% unlist()
+for (allele in alleles2control){
+  
+  # Parse locus and allele
+  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  
+  # Filter HLA calls 
+  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+  
+}
+
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$Haplotype, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "HLA_Haplotype.")]
@@ -103,19 +116,6 @@ countHaplo = function(settings, HLA.df, covars.df){
   
   # Get reference
   ref.haplo <- HLA.df %>% filter(sample.id %notin% hetero.haplo$sample.id & sample.id %notin% homo.haplo$sample.id)
-  
-  # Parse alleles to exclude
-  if (! settings$allele2exclude %>% is_empty()){
-    allele2control <- settings$allele2exclude %>% unlist()
-    loci <- allele2control %>% lapply(function(x) x %>% strsplit(split = "\\*") %>% unlist() %>% head(n=1)) %>% unlist()
-    alleles <- allele2control %>% lapply(function(x) x %>% strsplit(split = "\\*") %>% unlist() %>% tail(n=1)) %>% unlist()
-    
-    # Filter out reference based on allele 2 exclude in setttings
-    for (i in 1:length(loci)){
-      locus.id <- c(paste0(loci[i], ".1"), paste0(loci[i], ".2"))
-      ref.haplo <- ref.haplo %>% filter(get(locus.id[1]) != alleles[i] & get(locus.id[2]) != alleles[i])
-    }
-  }
 
   # Parse cases and controls ids
   cases.ids <- covars.df %>% filter(pheno ==1) %>% .["sample.id"] %>% unlist(); Ncases <- cases.ids %>% length()

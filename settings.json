@@ -36,6 +36,6 @@
     "AA2control":[],
 
     "Haplotype":["DPA1*01:03", "DPB1*03:01"],
-    "EM_haplo":[]
+    "EM_haplo":["DPA1", "DPB1"]
 
 }
