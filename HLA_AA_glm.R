@@ -173,7 +173,7 @@ run_GLM = function(OHE.AA, OHE.AA.control, covars.df, L, pos){
   
   # Merge dataset to include PCs
   AAs2control <- settings$AA2control %>% unlist()
-  AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
+  AAs.IDs <- colnames(OHE.AA)[-c(1,ncol(OHE.AA))]
   OHE.AA <- merge(OHE.AA, covars.df[,c("sample.id", "PC1", "PC2", "PC3")], by = 'sample.id')
   
   # Remove aminoacid for control
@@ -210,8 +210,8 @@ run_GLM = function(OHE.AA, OHE.AA.control, covars.df, L, pos){
     
     # Check for colinearity, and add variable to matrix
     if (any(AA.model$aliased)){
-      AA.model$coefficients <- rbind(AA.model$coefficients, rep(NA, dim(AA.model$coefficients)[2]))
-      rownames(AA.model$coefficients)[6:nrow(AA.model$coefficients)] <- AAs2control
+      AA.model$coefficients <- rbind(AA.model$coefficients, matrix(rep(NA, 4*length(which(AA.model$aliased))), ncol = 4))
+      rownames(AA.model$coefficients)[which(AA.model$aliased)] <- AA.model$aliased %>% names() %>% .[which(AA.model$aliased)]
     }
     
     AA.model.df <- rbind(AA.model.df, c(AA.model$coefficients[2,1], 
