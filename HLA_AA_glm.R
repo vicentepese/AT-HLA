@@ -128,7 +128,7 @@ count_AA = function(OHE.AA, locus, pos, AAs){
   
   # Parse amino acids
   AAs2control <- settings$AA2control %>% unlist()
-  AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
+  AAs.IDs <- colnames(OHE.AA)[-c(1,ncol(OHE.AA))]
   
   # Count cases for each allele 
   Ncases <- OHE.AA.cases[,AAs.IDs] %>% apply(MARGIN=2, function (x) x %>% table() %>% .['1'])
@@ -169,16 +169,19 @@ parseAlleles = function(AA.model.df, AA_locus){
 
 ########### REGRESSION MODEL# ########## 
 
-run_GLM = function(OHE.AA, covars.df, L, pos){
+run_GLM = function(OHE.AA, OHE.AA.control, covars.df, L, pos){
   
   # Merge dataset to include PCs
   AAs2control <- settings$AA2control %>% unlist()
   AAs.IDs <- colnames(OHE.AA)[-c(1,(ncol(OHE.AA)-length(AAs2control)):ncol(OHE.AA))]
   OHE.AA <- merge(OHE.AA, covars.df[,c("sample.id", "PC1", "PC2", "PC3")], by = 'sample.id')
   
-  # Remove alleles for control
+  # Remove aminoacid for control
   OHE.AA[AAs2control] <- NULL
   AAs.IDs <- AAs.IDs[!AAs.IDs %in% AAs2control]
+  
+  # Append aminoacid to control 
+  OHE.AA <- OHE.AA %>% merge(OHE.AA.control, by = "sample.id")
   
   # Run logistic regression on carrier frequency 
   AA.model.df <- data.frame(); AAs <- c()
@@ -204,6 +207,13 @@ run_GLM = function(OHE.AA, covars.df, L, pos){
     AA.model <- glm(data = OHE.AA, 
                           formula = as.formula(glm.formula),
                           family = 'binomial', maxit = 100) %>% summary()
+    
+    # Check for colinearity, and add variable to matrix
+    if (any(AA.model$aliased)){
+      AA.model$coefficients <- rbind(AA.model$coefficients, rep(NA, dim(AA.model$coefficients)[2]))
+      rownames(AA.model$coefficients)[6:nrow(AA.model$coefficients)] <- AAs2control
+    }
+    
     AA.model.df <- rbind(AA.model.df, c(AA.model$coefficients[2,1], 
                                         AA.model$coefficients[,dim(AA.model$coefficients)[2]]))
     
@@ -227,6 +237,22 @@ run_GLM = function(OHE.AA, covars.df, L, pos){
 # Get loci, number of cases and controls
 loci <- unique(AA_alignment$locus)
 c(Ncases, Ncontrols) %<-% c(HLA.df$pheno %>% table %>%.['1'], HLA.df$pheno %>% table %>%.['0'])
+
+# Get counts of alleles to control
+OHE.AA.control <- data.frame(sample.id = HLA.df$sample.id)
+for (AA2control in AAs2control){
+  
+  # Parse locus, aminoacid and position 
+  AA.split <- AA2control %>% strsplit("_") %>% unlist()
+  L <- AA.split[1]; pos <- AA.split[2]; AA <- AA.split[3]; 
+  
+  # Get alignment subset, and compute OHE
+  AA_locus <- AA_alignment %>% filter(locus ==  L)
+  AAs <- AA_locus$sequence %>% lapply(function(x, pos) substr(x, pos, pos), pos) %>% unlist() %>% unique()
+  OHE.AA.control <- merge(OHE.AA.control, 
+                          AA2OHE(settings, AAs, pos, L, AA_locus, HLA.df) %>% .[,c("sample.id",AA2control)], by = "sample.id")
+  
+}
 
 # Initialize loop
 AA.df <- data.frame()
@@ -266,7 +292,7 @@ for (L in loci){
       OHE.AA <- OHE.AA %>% filter(sample.id %in% probs.df_filt$sample.id)
       
       # Fit GLM 
-      AA.model.df <- run_GLM(OHE.AA, covars.df, L, pos)
+      AA.model.df <- run_GLM(OHE.AA, OHE.AA.control, covars.df, L, pos)
       
       # Count aminoacids
       AA.count <- count_AA(OHE.AA, L, pos, AAs)
