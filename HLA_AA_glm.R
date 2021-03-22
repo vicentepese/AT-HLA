@@ -55,6 +55,28 @@ HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 # Append pheno to HLA calls 
 HLA.df <- merge(HLA.df, covars.df[,c("sample.id", "pheno")], by = "sample.id")
 
+# Filter out the subjects with alleles to exclude 
+for (allele in settings$allele2exclude %>%unlist()){
+  
+  # Parse locus and allele
+  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+  
+  # Filter HLA calls 
+  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+  
+}
+
+# Parse HLA calls based on ethnicity, if provided
+if (!settings$ethnicity %>% is_empty()){
+  
+  # Parse IDs in ethnicity/ies
+  ethnicity.df <- read.csv(settings$file$ethnicity)
+  ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
+  HLA.df <- HLA.df %>% 
+    filter(sample.id %in% ethnicity.df.filt$sample.id)
+}
+
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$AA, full.names = TRUE)
 file.remove(file.names)
@@ -66,7 +88,7 @@ AA_alignment <- read.table(settings$file$AA_alignment, header = TRUE, sep = ',')
 AA_alignment[,3] <- AA_alignment %>% apply(MARGIN = 1, function(x) x[3] %>% substr(start = 30, stop = nchar(x[3])))
 
 # Read AAs to control
-AAs2control <- settings$AA2control
+AAs2control <- settings$AA2control %>% unlist()
 
 ########### OHE FUNCTIONS########### 
 

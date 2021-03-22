@@ -33,7 +33,7 @@
     "allele2exclude":[],
     "skipAllele":[],
 
-    "AA2control":[],
+    "AA2control":["DRB1_13_Y"],
 
     "Haplotype":["DPA1*01:03", "DPB1*03:01"],
     "EM_haplo":["DPA1", "DPB1"]
