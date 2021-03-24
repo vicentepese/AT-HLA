@@ -211,7 +211,7 @@ run_GLM = function(OHE.AA, OHE.AA.control, covars.df, L, pos){
     # Check for colinearity, and add variable to matrix
     if (any(AA.model$aliased)){
       AA.model$coefficients <- rbind(AA.model$coefficients, matrix(rep(NA, 4*length(which(AA.model$aliased))), ncol = 4))
-      rownames(AA.model$coefficients)[which(AA.model$aliased)] <- AA.model$aliased %>% names() %>% .[which(AA.model$aliased)]
+      rownames(AA.model$coefficients)[which(rownames(AA.model$coefficients) == "")] <- AA.model$aliased %>% names() %>% .[which(AA.model$aliased)]
     }
     
     AA.model.df <- rbind(AA.model.df, c(AA.model$coefficients[2,1], 

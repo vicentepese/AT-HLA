@@ -33,7 +33,7 @@
     "allele2exclude":[],
     "skipAllele":[],
 
-    "AA2control":[],
+    "AA2control":["DRB1_11_G"],
 
     "Haplotype":[],
     "EM_haplo":[]
