@@ -139,6 +139,11 @@ for (L in loci){
   # Get alignment subset, and counts subset
   AA_locus <- AA_alignment %>% filter(locus == L)
   
+  # Get alleles from data and filter alleles in alignment
+  alleles.data <- c(HLA.df[,A1], HLA.df[,A2]) %>% unique();
+  alleles.data <- rep(paste0(L, "*"), length(alleles.data)) %>% paste0(alleles.data)
+  AA_locus <- AA_locus %>% filter(allele %in% alleles.data)
+  
   # Get max sequence length 
   maxLen <- AA_locus$sequence %>% lapply(nchar) %>% unlist() %>% max()
   
