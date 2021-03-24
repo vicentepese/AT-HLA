@@ -236,6 +236,9 @@ run_GLM = function(OHE.AA, OHE.AA.control, covars.df, L, pos){
 
 # Get loci, number of cases and controls
 loci <- unique(AA_alignment$locus)
+loci.data <- colnames(HLA.df)[grepl(colnames(HLA.df), pattern = "\\.1")]
+loci.data <- loci.data %>% lapply(function(x) strsplit(x, split = "\\.") %>% unlist() %>% head(n=1)) %>% unlist()
+loci <- loci[which(loci %in% loci.data)] 
 c(Ncases, Ncontrols) %<-% c(HLA.df$pheno %>% table %>%.['1'], HLA.df$pheno %>% table %>%.['0'])
 
 # Get counts of alleles to control

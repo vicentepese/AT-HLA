@@ -20,7 +20,7 @@
         "HLA_Data":"Data/HLA_df.csv",
         "covars":"Resources/covars.csv",
         "probs":"Resources/probs.csv",
-        "AA_alignment": "Resources/AminoAcid_alignment.csv",
+        "AA_alignment": "Resources/AminoAcid_alignment_2021.csv",
         "ethnicity":"Resources/ethnicity.csv"
     },
 
@@ -33,7 +33,7 @@
     "allele2exclude":[],
     "skipAllele":[],
 
-    "AA2control":["DRB1_4_Q", "DRB1_11_G","DRB1_13_Y","DRB1_14_K","DRB1_25_Q","DRB1_30_L","DRB1_74_Q","DRB1_78_V"],
+    "AA2control":[],
 
     "Haplotype":[],
     "EM_haplo":[]
