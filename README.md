@@ -293,7 +293,7 @@ Rscript HLA_HardyWeinberg.R
 ```
 
 ### 5.1.2 Decription
-Provided an allele, it performs Hardy-Weinberg test and computes allele cunt.
+Provided an allele, it performs Hardy-Weinberg test and computes allele count.
 
 ### 5.1.3 Settings
 Please, in addition to the necessary settings described in Section 2.2.3 include:
@@ -303,15 +303,30 @@ Please, in addition to the necessary settings described in Section 2.2.3 include
 
 ### 5.1.4  Outputs and results interpretation
 The script will produce a Hardy-Weinberg count association output:
-- EM Haplotype association: *Outputs/Haplotype/HLA_EM.xlsx*
+- Hardy-Weinberg association: *Outputs/Zygosity/HLA_HardyWeinberg.xlsx*
 
-The file contains the following columns:
-- *LOCUS*: Allele of the locus/loci 
-- *Count.Cases/Controls*: Number of cases/controls carrying the haplotype
-- *FreqCases / FreqControls*: Frequency of cases/controls carrying the haplotype
-- *OR*: Odds Ratio computed from directly from the contingency matrix
-- *Chi2*: Chi-square P-value.
-- *RefCases/Controls*: Number of cases and controls not carrying the haplotype.
+
+For output interpretation, please see Section 3.1.3.
+
+
+## 5.2 Zygsity Analysis
+
+### 5.2.1 Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_zygosity.R
+```
+
+### 5.2.2 Decription
+It performs a statistical testing of heterozygous vs homozygous for each allele and locus. 
+
+**Note**: The nomenclature *must* be LOCUS*XX:XX (e.g, DRB1*07:01). Onlye **one** allele must be passed into the list.
+
+### 5.2.3  Outputs and results interpretation
+The script will produce an output with the Chi square p-values and count for each alleles
+- Zygosity association: *Outputs/Zygosity/HLA_Zygosity.xlsx*
+
+For interpretation of the output, please see Section 3.1.3
 
 # 6. Amino Acid Association Analysis
 
