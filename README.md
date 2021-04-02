@@ -116,15 +116,7 @@ Note that AT-HLA does not require specific labels for *Population*. The provided
 ### 2.2.3. Settings
 
 AT-HLA follows a *settings* logic. This means that paths, files, and variables are stored in `settings.json`. To use AT-HLA, please fill-up the following sections in `settings.json`:
-```
-file:
-    HLA_Data      [string]        Full path to the HLA data to be analyzed (i.e. Input Data)
-    covars        [string]        Full path to the covariates of the HLA data
-    probs         [string]        Full path to the imputation probabilities of the HLA data.
-    probs_thr     [float]         Probability threshold. See section 2.2.2. If the Input Data is unimputed, by setting this variable to 0 and no subjects will be excluded.
-    freq_thr      [float]         Frequency threshold. Only applied for P-value correction. P-values belonging to alleles for which the carrier/allele frequencies both in cases and controls are lower than the threshold, will not be corrected. This allows a less stringent P-value correction.
-  
-```
+
 - *file*:
   - *HLA_Data* (string): Full path to the HLA data to be analyzed (i.e. Input Data)
   - *covars* (string): Full path to the covariates of the HLA data
