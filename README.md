@@ -253,24 +253,24 @@ The file contains the following columns:
 - *OR*: Odds Ratio computed from directly from the contingency matrix
 - *chi.sq*: Chi-square P-value.
 
-## 4.1. Expectation Maximization
+## 4.2 Expectation Maximization
 
-### 4.1.1. Command 
+### 4.2.1 Command 
 From directory of the cloned repository: <br>
 ```
 Rscript HLA_EM.R
 ```
 
-### 4.1.2 Decription
+### 4.2.2 Decription
 Provided an set of loci, it performs the Expectation Maximization (EM) algorithm and predict haplotype frequencies.
 
-### 4.1.3 Settings
+### 4.2.3 Settings
 Please, in addition to the necessary settings described in Section 2.2.3 include:
 - *EM_haplo* (list of strings): haplotypes, i.e list of loci.
 
 **Note**: The nomenclature *must* be LOCUS (e.g, DRB1, DPB1)
 
-### 4.1.4  Outputs and results interpretation
+### 4.2.4  Outputs and results interpretation
 The script will produce a EM haplotype count association output:
 - EM Haplotype association: *Outputs/Haplotype/HLA_EM.xlsx*
 
@@ -283,6 +283,35 @@ The file contains the following columns:
 - *RefCases/Controls*: Number of cases and controls not carrying the haplotype.
 
 # 5. Zygosity Analysis
+
+## 5.1 Hardy-Weinberg
+
+### 5.1.1 Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_HardyWeinberg.R
+```
+
+### 5.1.2 Decription
+Provided an allele, it performs Hardy-Weinberg test and computes allele cunt.
+
+### 5.1.3 Settings
+Please, in addition to the necessary settings described in Section 2.2.3 include:
+- *allele2control* (list of strings): allele to study Hardy-Weinberg effect.
+
+**Note**: The nomenclature *must* be LOCUS*XX:XX (e.g, DRB1*07:01). Onlye **one** allele must be passed into the list.
+
+### 5.1.4  Outputs and results interpretation
+The script will produce a Hardy-Weinberg count association output:
+- EM Haplotype association: *Outputs/Haplotype/HLA_EM.xlsx*
+
+The file contains the following columns:
+- *LOCUS*: Allele of the locus/loci 
+- *Count.Cases/Controls*: Number of cases/controls carrying the haplotype
+- *FreqCases / FreqControls*: Frequency of cases/controls carrying the haplotype
+- *OR*: Odds Ratio computed from directly from the contingency matrix
+- *Chi2*: Chi-square P-value.
+- *RefCases/Controls*: Number of cases and controls not carrying the haplotype.
 
 # 6. Amino Acid Association Analysis
 
