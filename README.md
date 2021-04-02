@@ -224,6 +224,7 @@ The following additional settings can be adjusted through `settings.json`:
 **Note**: The nomenclature *must* be LOCUS\*XX:XX (see Section 2.2.3: *allele2exclude*). 
 
 # 4. Haplotype Analysis
+Association study of specifc HLA haplotypes with a disease.
 
 ## 4.1. Haplotype count 
 
@@ -283,6 +284,7 @@ The file contains the following columns:
 - *RefCases/Controls*: Number of cases and controls not carrying the haplotype.
 
 # 5. Zygosity Analysis
+HLA zygosity study of a disease
 
 ## 5.1 Hardy-Weinberg
 
@@ -353,8 +355,36 @@ The file contains  the following columns:
 - *Chi2.pval/CORR*: Chi-square p-value and BY-FDR corrected Chi-square pvalue
 - *OR/OR.UpperLimit/OR.LowerLimit*: Fisher's OR estimate and 95% Confidence Interval
 
-
 # 6. Amino Acid Association Analysis
 
+Amino acid association of HLA genes with a disease. An amino acid alignment file from [IPD-IMGT/HLA](https://www.ebi.ac.uk/ipd/imgt/hla/) is included in the pipeline. The original and un-processed FASTA file is included as well. 
+
+*WARNING*: This section is under construction and may not produce desirable outputs. 
+
+
+## 6.1 Amino Acid Analysis
+
+### 6.1.1 Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_AA_Chi.R
+```
+
+### 6.1.2 Decription
+The script computes statistical testing for each pair of amino acid-position per locus, along with a frequency count in cases and controls, and the alleles in which the amino acid-position pair is present.
+
+### 6.1.3  Outputs and results interpretation
+The script produces an output with the Chi-square:
+- *Amino acid analysis*: *Outputs/AA/AA_Chi2.csv*
+
+The output file contains the following columns:
+- *locus*: locus of the amino acid-position pair
+- *AA*: amino acid
+- *pos*: position
+- *Ncases/Ncontrol*: number of cases/controls carrying the amino acid-position pair
+- *FreqCases/Freqcontrols*: frequency of cases/control carrying the amino acid-position pair
+- *pval/pval.corr*: Chi-square p-value and Chi-square p-value BY-FDR corrected
+- *OR*: odds-ratio computed directly from the contingency table
+- *alleles*: alleles where the amino acid-position pair is present
 
 
