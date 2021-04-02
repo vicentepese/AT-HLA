@@ -191,7 +191,7 @@ Both files will contain the following common columns:
 - *allele.pval.CORR*: P-value of the allele FDR corrected
 - *PC1/2/3.pval*: P-alue of the PC1,PC2, and PC3
 
-For allele and carrier counts column reference, please see Section 3.1: Outputs and results interpretation.
+For allele and carrier counts column reference, please see Section 3.1.3: Outputs and results interpretation.
 
 ### 3.2.4 Additional settings
 The following additional settings can be adjusted through `settings.json`:
@@ -387,4 +387,25 @@ The output file contains the following columns:
 - *OR*: odds-ratio computed directly from the contingency table
 - *alleles*: alleles where the amino acid-position pair is present
 
+## 6.2 Amino Acid Logistic Model Analysis
 
+### 6.2.1 Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_AA_glm.R
+```
+
+### 6.2.2 Decription
+Fits a Generalized Logistic Model (GLM) to each amino acid-position pair in each locus, controlling by the first three Principal Components. P-values are FDR corrected and through BY procedure. 
+
+### 6.2.3 Additional Settings
+Specific amino acid-position pairs can be controlled in the logistic models by filling up in `settings.json`:
+-  *AA2control* (list of strings): list of amino acid-position pair to control
+
+**Note:** The format must be *LOCUS_POS_AA* (e.g. DRB1_11_V)
+
+### 6.2.4  Outputs and results interpretation
+The script produces an output with the logistic model p-values:
+- *Amino acid GLM analysis*: *Outputs/AA_GLM/AA_GLM.csv*
+
+For interpretation of results, please see Section 6.1.3 and 3.2.3
