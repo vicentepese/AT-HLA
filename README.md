@@ -115,7 +115,7 @@ Note that AT-HLA does not require specific labels for *Population*. The provided
 
 ### 2.2.3. Settings
 
-AT-HLA follows a *settings* logic. This means that paths, files, and variables are stored in `settings.json`. To use AT-HLA, please fill up the following sections in `settings.json`:
+AT-HLA follows a *settings* logic. This means that paths, files, and variables are stored in `settings.json`. To use AT-HLA, please fill-up the following sections in `settings.json`:
 
 - *file*:
   - *HLA_Data* (string): Full path to the HLA data to be analyzed (i.e. Input Data)
@@ -234,7 +234,7 @@ Rscript HLA_haplotype.R
 ```
 
 ### 4.1.2 Decription
-Provided a haplotype, it performs a count of heterozygous and homozygous cases and controls and will test against a reference of non-carriers.
+Provided an haplotype, it performs a count of heterozygous and homozygous cases and controls, and will test agains a reference of non-carriers.
 
 ### 4.1.3 Settings
 Please, in addition to the necessary settings described in Section 2.2.3 include:
@@ -250,7 +250,7 @@ The file contains the following columns:
 - *LOCUS.1/.2*: Allele 1 and allele 2 
 - *Ncases / Ncontrols*: Number of cases/controls carrying the haplotype
 - *FreqCases / FreqControls*: Frequency of cases/controls carrying the haplotype
-- *OR*: Odds Ratio computed directly from the contingency matrix
+- *OR*: Odds Ratio computed from directly from the contingency matrix
 - *chi.sq*: Chi-square P-value.
 
 ## 4.2 Expectation Maximization
@@ -262,7 +262,7 @@ Rscript HLA_EM.R
 ```
 
 ### 4.2.2 Decription
-Provided a set of loci, it performs the Expectation-Maximization (EM) algorithm and predicts haplotype frequencies.
+Provided an set of loci, it performs the Expectation Maximization (EM) algorithm and predict haplotype frequencies.
 
 ### 4.2.3 Settings
 Please, in addition to the necessary settings described in Section 2.2.3 include:
@@ -271,14 +271,14 @@ Please, in addition to the necessary settings described in Section 2.2.3 include
 **Note**: The nomenclature *must* be LOCUS (e.g, DRB1, DPB1)
 
 ### 4.2.4  Outputs and results interpretation
-The script will produce an EM haplotype count association output:
+The script will produce a EM haplotype count association output:
 - EM Haplotype association: *Outputs/Haplotype/HLA_EM.xlsx*
 
 The file contains the following columns:
 - *LOCUS*: Allele of the locus/loci 
 - *Count.Cases/Controls*: Number of cases/controls carrying the haplotype
 - *FreqCases / FreqControls*: Frequency of cases/controls carrying the haplotype
-- *OR*: Odds Ratio computed directly from the contingency matrix
+- *OR*: Odds Ratio computed from directly from the contingency matrix
 - *Chi2*: Chi-square P-value.
 - *RefCases/Controls*: Number of cases and controls not carrying the haplotype.
 
@@ -293,13 +293,13 @@ Rscript HLA_HardyWeinberg.R
 ```
 
 ### 5.1.2 Decription
-Provided an allele, it performs the Hardy-Weinberg test and computes allele count.
+Provided an allele, it performs Hardy-Weinberg test and computes allele count.
 
 ### 5.1.3 Settings
 Please, in addition to the necessary settings described in Section 2.2.3 include:
 - *allele2control* (list of strings): allele to study Hardy-Weinberg effect.
 
-**Note**: The nomenclature *must* be LOCUS*XX:XX (e.g, DRB1*07:01). Only **one** allele must be passed into the list.
+**Note**: The nomenclature *must* be LOCUS*XX:XX (e.g, DRB1*07:01). Onlye **one** allele must be passed into the list.
 
 ### 5.1.4  Outputs and results interpretation
 The script will produce a Hardy-Weinberg count association output:
@@ -307,7 +307,6 @@ The script will produce a Hardy-Weinberg count association output:
 
 
 For output interpretation, please see Section 3.1.3.
-
 
 ## 5.2 Zygosity Analysis
 
@@ -318,15 +317,42 @@ Rscript HLA_zygosity.R
 ```
 
 ### 5.2.2 Decription
-It performs statistical testing of heterozygous vs homozygous for each allele and locus. 
-
-**Note**: The nomenclature *must* be LOCUS*XX:XX (e.g, DRB1*07:01). Only **one** allele must be passed into the list.
+It performs a statistical testing of heterozygous vs homozygous for each allele and locus in cases and controls. 
 
 ### 5.2.3  Outputs and results interpretation
-The script will produce an output with the Chi-square p-values and count for each allele
+The script will produce an output with the Chi square p-values and count for each alleles
 - Zygosity association: *Outputs/Zygosity/HLA_Zygosity.xlsx*
 
 For interpretation of the output, please see Section 3.1.3
+
+## 5.3 Heterozygosity Analysis
+
+### 5.3.1 Command 
+From directory of the cloned repository: <br>
+```
+Rscript HLA_heterozygosity.R
+```
+
+### 5.3.2 Decription
+Provided an allele, computes Chi-square testing for each of the pairing alleles vs. the rest of pairing alleles in cases and controls. 
+
+### 5.3.3. Settings
+Please, in addition to the necessary settings described in Section 2.2.3 include:
+- *allele2control* (list of strings): allele to study the heterozygosity effect.
+
+**Note**: The nomenclature *must* be LOCUS*XX:XX (e.g, DRB1*07:01). Only **one** allele must be passed into the list.
+
+### 5.3.4  Outputs and results interpretation
+The script will produce an output with the Chi-square p-values and count for eah paring allele:
+- Heterozygosity analysis: **
+
+The file contains  the following columns:
+- *allele*: pairing allele
+- *Ncases/Ncontrols*: number of cases/controls carrying the pairing allele
+- *FreqCases/FreqControls*: frequency of cases/controls carrying the pairing allele
+- *Chi2.pval/CORR*: Chi-square p-value and BY-FDR corrected Chi-square pvalue
+- *OR/OR.UpperLimit/OR.LowerLimit*: Fisher's OR estimate and 95% Confidence Interval
+
 
 # 6. Amino Acid Association Analysis
 
