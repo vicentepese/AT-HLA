@@ -95,3 +95,41 @@ sex.df <- data.frame(allele1 = c(a2study, a2study, "X"), allele2= c(a2study, "X"
 
 # Write output
 write.csv(sex.df, paste0(settings$Output$Utils, "Zygosity_demographics.csv"), row.names = FALSE)
+
+############## SEX ANALYSIS in heterozygous ###############
+
+# Parse other alleles in the heterozygous group, and remove allele 2 study
+allelesX <- HLA.het.sex[,c(locus.ids)] %>% unlist() %>% unique() 
+allelesX <- allelesX[-which(allelesX==allele)]
+
+# For the rest of alleles, compute fishers
+hetero.df <- data.frame()
+for (allele in allelesX){
+  
+  # Get count 
+  HLA.het.allele <- HLA.het.sex %>% filter(get(locus.ids[1]) == allele | get(locus.ids[2]) == allele)
+  
+  # Count males and females
+  aMale <- HLA.het.allele$Sex %>% table() %>% .["M"]; aFemale <-HLA.het.allele$Sex %>% table() %>% .["F"]
+  
+  # Compute contingency table 
+  cont.table <- matrix(c(aMale, aFemale, totalMales-aMale, totalFemales-aFemale),2)
+  cont.table[is.na(cont.table)] <- 0
+  
+  # Fishers 
+  fisher.res <- fisher.test(cont.table)
+  
+  # Append 
+  hetero.df <- hetero.df %>% rbind(c(allele,aMale, aFemale, fisher.res$p.value, 
+                                   fisher.res$estimate, fisher.res$conf.int[1], fisher.res$conf.int[2]))
+  
+}
+
+# Change colnames
+colnames(hetero.df) <- c("allele", "NMale", "NFemale","Fisher.PVAL","OR", "LCI","UCI")
+
+# Write output
+write.csv(hetero.df, paste0(settings$Output$Utils, "Heterozygosity_demographics.csv"), row.names = FALSE)
+
+############### HOMOZYGOUS AGE ###############
+
