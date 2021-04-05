@@ -29,7 +29,7 @@
 
     "ethnicity":[],
 
-    "allele2control":["DRB1*07:01"],
+    "allele2control":[],
     "allele2exclude":[],
     "skipAllele":[],
 
