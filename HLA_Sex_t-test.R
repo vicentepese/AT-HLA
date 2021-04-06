@@ -110,5 +110,5 @@ Sex.df <- data.frame(allele1 = c("DR7-", "DR7+", "DR7-","DR7+","DR7+"), allele2=
 
 
 # Write 
-write.xlsx(x = age.df, file = "Outputs/Utils/Age_T_Test.xlsx", sheet = "Sheet1")
+write.xlsx(x = Sex.df, file = "Outputs/Utils/Age_T_Sex.xlsx", sheet = "Sheet1")
 
