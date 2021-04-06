@@ -57,7 +57,7 @@ if (!settings$ethnicity %>% is_empty()){
 demo.df <- read.table("Resources/demographics.csv", sep = ",", header = TRUE)
 demo.df$Age[is.na(demo.df$Age)] <- 0; demo.df$OnsetAge[is.na(demo.df$OnsetAge)] <- 0
 demo.df$Age <- demo.df$Age+demo.df$OnsetAge; demo.df$Age[demo.df$Age==0] <- NA
-covars.df <- covars.df %>% merge(demo.df[,c("sample.id", "Age", "OnsetAge")], by = "sample.id")
+covars.df <- covars.df %>% merge(demo.df[,c("sample.id", "Age", "OnsetAge", "Sex")], by = "sample.id")
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)

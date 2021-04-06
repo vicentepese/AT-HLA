@@ -55,7 +55,8 @@ if(!settings$allele2exclude %>% is_empty()){
 demo.df <- read.table("Resources/demographics.csv", sep = ",", header = TRUE)
 demo.df$Age[is.na(demo.df$Age)] <- 0; demo.df$OnsetAge[is.na(demo.df$OnsetAge)] <- 0
 demo.df$Age <- demo.df$Age+demo.df$OnsetAge; demo.df$Age[demo.df$Age==0] <- NA
-covars.df <- covars.df %>% merge(demo.df[,c("sample.id", "Age", "OnsetAge")], by = "sample.id")
+demo.df$Sex <- as.factor(demo.df$Sex)
+covars.df <- covars.df %>% merge(demo.df[,c("sample.id", "Age", "OnsetAge", "Sex")], by = "sample.id")
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
@@ -191,8 +192,8 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
   # Merge dataset to include PCs
   as2control <- settings$allele2control %>% unlist()
   alleles.freq <- colnames(OHE.alleleFreq.data)[-c(1,(ncol(OHE.alleleFreq.data)-length(as2control)):ncol(OHE.alleleFreq.data))]
-  OHE.alleleFreq.data <- merge(OHE.alleleFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Age", "OnsetAge")], by = 'sample.id')
-  OHE.carrierFreq.data <- merge(OHE.carrierFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Age","OnsetAge")], by = 'sample.id')
+  OHE.alleleFreq.data <- merge(OHE.alleleFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Age", "OnsetAge", "Sex")], by = 'sample.id')
+  OHE.carrierFreq.data <- merge(OHE.carrierFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Age","OnsetAge", "Sex")], by = 'sample.id')
   
   # Remove alleles for control 
   locus.subset <- as2control[grepl(as2control, pattern = locus)]
@@ -213,12 +214,12 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
     }
     
     # Create GLM formula as string and fit GLM
-    glm.formula <- paste('Age ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
+    glm.formula <- paste('Sex ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
     
     # Fit GLM model
     Afreq.model <- glm(data = OHE.alleleFreq.data, 
                        formula = as.formula(glm.formula),
-                       family = 'gaussian', maxit = 100) %>% summary()
+                       family = 'binomial', maxit = 100) %>% summary()
     
     # Format output
     Afreq.model.df <- rbind(Afreq.model.df, c(Afreq.model$coefficients[2,1], 
@@ -243,12 +244,12 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
     }
     
     # Create GLM formula as string and fit GLM
-    glm.formula <- paste('Age ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
+    glm.formula <- paste('Sex ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
     
     # Fit GLM model
     Acarrier.model <- glm(data = OHE.carrierFreq.data, 
                           formula = as.formula(glm.formula),
-                          family = 'gaussian', maxit = 100) %>% summary()
+                          family = 'binomial', maxit = 100) %>% summary()
     
     # Format output
     Acarrier.model.df <- rbind(Acarrier.model.df, c(Acarrier.model$coefficients[2,1], 
@@ -355,9 +356,9 @@ for (locus in loci){
   
   
   # Write to excel output
-  write.xlsx(x = HLA.GLM_alleles.df_filt, file = paste(settings$Output$Utils, 'HLA_GLM_Allele_Age','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.GLM_alleles.df_filt, file = paste(settings$Output$Utils, 'HLA_GLM_Allele_Sex','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
-  write.xlsx(x = HLA.GLM_carriers.df_filt, file = paste(settings$Output$Utils, 'HLA_GLM_Carrier_Age','.xlsx', sep = ''), sheetName = locus,
+  write.xlsx(x = HLA.GLM_carriers.df_filt, file = paste(settings$Output$Utils, 'HLA_GLM_Carrier_Sex','.xlsx', sep = ''), sheetName = locus,
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
