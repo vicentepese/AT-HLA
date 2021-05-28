@@ -86,9 +86,9 @@ HLA.G3 <- HLA.neg %>% filter(DRB1.1 == "04:02" | DRB1.2 == "04:02")
 HLA.G4 <- HLA.hetero %>% filter(DRB1.1 != "04:02" & DRB1.2 != "04:02")
 HLA.G5<- HLA.neg %>% filter(DRB1.1 != "04:02" & DRB1.2 != "04:02")
 
-# # Compute t-test 
-# hetero.test <- t.test(HLA.hetero$Age[!is.na(HLA.hetero$Age)], HLA.neg$Age[!is.na(HLA.neg$Age)])
-# homo.test <- t.test(HLA.hetero$Age[!is.na(HLA.hetero$Age)], HLA.homo$Age[!is.na(HLA.homo$Age)])
+# Compute t-test
+hetero.test <- t.test(HLA.hetero$Age[!is.na(HLA.hetero$Age)], HLA.neg$Age[!is.na(HLA.neg$Age)])
+homo.test <- t.test(HLA.hetero$Age[!is.na(HLA.hetero$Age)], HLA.homo$Age[!is.na(HLA.homo$Age)])
 
 # Compute t-test
 G3.t <- t.test(HLA.G3$Age[!is.na(HLA.G3$Age)], HLA.G4$Age[!is.na(HLA.G4$Age)])
@@ -119,5 +119,5 @@ age.df <- data.frame(allele1 = c(allele, allele, "X"), allele2= c(allele, "X", "
                      T.PVAL.HOMO = c(NA, hetero.test$p.value, "Ref"))
 
 # Write 
-write.xlsx(x = age.df, file = "Outputs/Utils/Age_T_Test.xlsx", sheet = "Sheet1")
+write.xlsx(x = age.df, file = "Outputs/Utils/Age_T_DR7Zyg.xlsx", sheet = "Sheet1")
 

@@ -36,6 +36,6 @@
     "AA2control":[],
 
     "Haplotype":[],
-    "EM_haplo":[]
+    "EM_haplo":["DRB1","DQA1","DQB1","DRB"]
 
 }

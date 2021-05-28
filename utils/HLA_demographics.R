@@ -89,10 +89,13 @@ sex.df <- data.frame(allele1 = c(a2study, a2study, "X"), allele2= c(a2study, "X"
                      Females = c(homo.fem, het.fem, neg.fem), 
                      FreqFemales = c(homo.fem, het.fem, neg.fem)/totalFemales*100,
                      Chi2.PVAL.HET = c(NA, chisq.res.neg$p.value, "Ref"),
-                     OR = c(NA, paste0(OR.res.neg$measure[2,1]), "Ref"), 
+                     OR = c(NA, paste0(OR.res.neg$measure[2,1]), "Ref"),
+                     OR_LI = c(NA, paste0(OR.res.neg$measure[2,2]), "Ref"),
+                     OR_UI = c(NA, paste0(OR.res.neg$measure[2,3]), "Ref"),
                      Chi2.PVAL.HOMO = c(chisq.res.homo$p.value, "Ref", NA), 
-                     OR = c(OR.res.homo$measure[2,1], "Res", NA))
-
+                     OR = c(OR.res.homo$measure[2,1], "Ref", NA),
+                     OR_LI = c(OR.res.homo$measure[2,2], "Ref", NA),
+                     OR_UI = c(OR.res.homo$measure[2,3], "Ref", NA))
 # Write output
 write.csv(sex.df, paste0(settings$Output$Utils, "Zygosity_demographics.csv"), row.names = FALSE)
 
@@ -131,5 +134,4 @@ colnames(hetero.df) <- c("allele", "NMale", "NFemale","Fisher.PVAL","OR", "LCI",
 # Write output
 write.csv(hetero.df, paste0(settings$Output$Utils, "Heterozygosity_demographics.csv"), row.names = FALSE)
 
-############### HOMOZYGOUS AGE ###############
 

@@ -86,9 +86,9 @@ HLA.G3 <- HLA.neg %>% filter(DRB1.1 == "04:02" | DRB1.2 == "04:02"); G3.male <- 
 HLA.G4 <- HLA.hetero %>% filter(DRB1.1 != "04:02" & DRB1.2 != "04:02"); G4.male <- HLA.G4$Sex %>% table() %>% .["M"]; G4.female <- HLA.G4$Sex %>% table() %>% .["F"];
 HLA.G5<- HLA.neg %>% filter(DRB1.1 != "04:02" & DRB1.2 != "04:02"); G5.male <- HLA.G5$Sex %>% table() %>% .["M"]; G5.female <- HLA.G5$Sex %>% table() %>% .["F"];
 
-# # Compute t-test 
-# hetero.test <- t.test(HLA.hetero$Sex[!is.na(HLA.hetero$Sex)], HLA.neg$Sex[!is.na(HLA.neg$Sex)])
-# homo.test <- t.test(HLA.hetero$Sex[!is.na(HLA.hetero$Sex)], HLA.homo$Sex[!is.na(HLA.homo$Sex)])
+# Compute t-test
+hetero.test <- t.test(HLA.hetero$Sex[!is.na(HLA.hetero$Sex)], HLA.neg$Sex[!is.na(HLA.neg$Sex)])
+homo.test <- t.test(HLA.hetero$Sex[!is.na(HLA.hetero$Sex)], HLA.homo$Sex[!is.na(HLA.homo$Sex)])
 
 # Compute t-test
 G3.test <- fisher.test(matrix(c(G3.male, G4.male, G3.female, G4.female), nrow = 2))
@@ -110,5 +110,25 @@ Sex.df <- data.frame(allele1 = c("DR7-", "DR7+", "DR7-","DR7+","DR7+"), allele2=
 
 
 # Write 
-write.xlsx(x = Sex.df, file = "Outputs/Utils/Age_T_Sex.xlsx", sheet = "Sheet1")
+write.xlsx(x = Sex.df, file = "Outputs/Utils/Sex_T_Test.xlsx", sheet = "Sheet1")
 
+# Zygosity tests
+hetero.male <- HLA.hetero$Sex %>% table() %>% .["M"]; hetero.fem <- HLA.hetero$Sex %>% table()  %>% .["F"]
+homo.male <- HLA.homo$Sex %>% table()  %>% .["M"]; homo.fem <- HLA.homo$Sex %>% table() %>% .["F"]
+neg.male <- HLA.neg$Sex %>% table()  %>% .["M"]; neg.fem <- HLA.neg$Sex %>% table() %>% .["F"]
+
+
+hetero.test <- fisher.test(matrix(c(hetero.male, hetero.fem,)))
+homo.test <- t.test(HLA.hetero$Age[!is.na(HLA.hetero$Age)], HLA.homo$Age[!is.na(HLA.homo$Age)])
+
+
+# Zygosity output
+age.df <- data.frame(allele1 = c(allele, allele, "X"), allele2= c(allele, "X", "X"),
+                     mean.Age = c(mean(HLA.homo$Age, na.rm = T), mean(HLA.hetero$Age, na.rm = T), mean(HLA.neg$Age, na.rm = T)),
+                     std.Age = c(sd(HLA.homo$Age, na.rm = T), sd(HLA.hetero$Age, na.rm = T), sd(HLA.neg$Age, na.rm = T)),
+                     T.value.HOMO = c(homo.test$statistic, "Ref", NA),
+                     T.LI.HOMO = c(homo.test$conf.int[1], "Ref", NA), T.UI.HOMO = c(homo.test$conf.int[2], "Ref", NA),
+                     T.PVAL.HOMO = c(homo.test$p.value, "Ref", NA),
+                     T.value.HET = c(NA, hetero.test$statistic, "Ref"),
+                     T.LI.HET = c(NA, hetero.test$conf.int[1], "Ref"), T.UI.HET = c(NA, hetero.test$conf.int[2], "Ref"),
+                     T.PVAL.HOMO = c(NA, hetero.test$p.value, "Ref"))

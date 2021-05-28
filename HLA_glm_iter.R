@@ -352,7 +352,7 @@ while (pval < 0.05){
   
   # Exlude NAs
   pvalTotal <- pvalTotal[!is.na(pvalTotal)]
-  
+
   # Get minimum allele value 
   pval <- pvalTotal[which(pvalTotal == min(pvalTotal))][1]
   pvalMin <- pval %>% names(); pvalMinLocus <- pvalMin %>% strsplit('\\*') %>% unlist() %>% .[1]
