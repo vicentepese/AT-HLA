@@ -25,7 +25,8 @@ library(plyr)
 ########### INITIALIZATION ########### 
 
 # Set working directory
-setwd("~/Documents/HLA_association_pipeline")
+this_dir <- function(directory)
+setwd(file.path(getwd(), directory))
 
 # Import settings
 settings <- jsonlite::read_json("settings.json")
