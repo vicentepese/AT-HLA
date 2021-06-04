@@ -26,6 +26,7 @@ library(plyr)
 
 # Import settings
 settings <- jsonlite::read_json("settings.json")
+options(stringsAsFactors = F)
 
 # Create comand
 `%notin%` <- Negate(`%in%`)

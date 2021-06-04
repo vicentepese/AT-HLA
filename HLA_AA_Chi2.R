@@ -25,8 +25,9 @@ library(epitools)
 
 ########### INITIALIZATION ########### 
 
-# Import settings
+# Import settings and set options
 settings <- jsonlite::read_json("settings.json")
+options(stringsAsFactors = F)
 
 # Create comand
 `%notin%` <- Negate(`%in%`)
@@ -133,7 +134,7 @@ for (L in loci){
   # Get locus ID
   c(A1, A2) %<-% c(paste0(L,'.1'), paste0(L,'.2'))
   
-  # Get alignment subset, and counts subset
+  # Get alignment subset
   AA_locus <- AA_alignment %>% filter(locus == L)
   
   # Get alleles from data and filter alleles in alignment
