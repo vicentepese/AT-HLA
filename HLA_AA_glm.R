@@ -26,9 +26,6 @@ library(epitools)
 
 ########### INITIALIZATION ########### 
 
-# Set working directory
-setwd(getSrcDirectory()[1])
-
 # Import settings
 settings <- jsonlite::read_json("settings.json")
 
