@@ -25,8 +25,7 @@ library(plyr)
 ########### INITIALIZATION ########### 
 
 # Set working directory
-this_dir <- function(directory)
-setwd(file.path(getwd(), directory))
+setwd(getSrcDirectory()[1])
 
 
 # Import settings
