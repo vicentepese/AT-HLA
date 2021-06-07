@@ -318,7 +318,7 @@ for (locus in loci){
   # Subset based on locus
   allele1 <- paste(locus, '.1',sep = '')
   allele2 <- paste(locus,'.2', sep =  '')
-  data.locus <- HLA.df[,c("sample.id",allele1, allele2)] 
+  data.locus <- HLA.df[,c("sample.id",allele1, allele2)] %>% filter(sample.id %in% probs.df_filt$sample.id)
   
   # Compute allele frequencies and counts, and carrier frequencies and counts
   ACFREQ.cases <- computeACFREQ(data.cases.filt, locus, 'case');

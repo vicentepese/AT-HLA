@@ -253,7 +253,8 @@ fitGLM = function(settings, locus, HLA.df, data.cases, data.controls, covars.df,
   # Subset locus
   allele1 <- paste(locus, '.1',sep = '')
   allele2 <- paste(locus,'.2', sep =  '')
-  data.locus <- HLA.df[,c('sample.id', allele1, allele2)]
+  data.locus <- HLA.df[,c('sample.id', allele1, allele2)] %>%
+    filter(sample.id %in% c(data.cases$sample.id, data.controls$sample.id))
   
   # Compute allele frequencies and coutns, and carrier frequencies and counts
   ACFREQ.cases <- computeACFREQ(data.cases, locus, 'case');
@@ -268,7 +269,8 @@ fitGLM = function(settings, locus, HLA.df, data.cases, data.controls, covars.df,
   ACFREQ.df <- ACFREQ.df %>% filter(allele %notin% c('',"00:00"))
   
   # Parse one hot encoding and merge
-  OHE.carrierFreq.data <- carrierFreqOHE(data.locus); if ('V1' %in% colnames(OHE.carrierFreq.data)){OHE.carrierFreq.data$V1 <- NULL}
+  OHE.carrierFreq.data <- carrierFreqOHE(data.locus); 
+  if ('V1' %in% colnames(OHE.carrierFreq.data)){OHE.carrierFreq.data$V1 <- NULL}
   OHE.carrierFreq.data<-  merge(as.data.frame(OHE.carrierFreq.data), 
                                 covars.df[c('pheno', 'sample.id')], by.x ='sample.id', by.y = 'sample.id') %>% 
     merge(controlAllele.df, by = 'sample.id')
