@@ -27,15 +27,15 @@
     "prob_thr":0.3,
     "freq_thr":0.05,
 
-    "ethnicity":[],
+    "ethnicity":["EUR"],
 
     "allele2control":["DRB1*07:01"],
-    "allele2exclude":[],
+    "allele2exclude":["DRB1*07:01", "DRB1*09:01","DRB1*01:01", "DRB1*04:02"],
     "skipAllele":[],
 
     "AA2control":[],
 
     "Haplotype":[],
-    "EM_haplo":["DRB1","DQA1","DQB1","DRB"]
+    "EM_haplo":["DQA1","DQB1","DRB1","DRB"]
 
 }

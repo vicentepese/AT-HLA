@@ -16,6 +16,7 @@
 
 # Import libraries
 library(jsonlite)
+library(epitools)
 library(tidyverse)
 library(readr)
 library(data.table)
@@ -109,6 +110,7 @@ computeChi2 = function(ACFREQ.df){
   fishers.OR.alleles <- c(); fishers.OR.carriers <- c()
   fishers.UI.alleles <- c(); fishers.UI.carriers <- c()
   fishers.LI.alleles <- c(); fishers.LI.carriers <- c(); OR <- c();
+  OR.low <-c(); OR.high <-c();
   
   # For each allele in the locus 
   for (A in ACFREQ.df$allele){
@@ -133,13 +135,18 @@ computeChi2 = function(ACFREQ.df){
     fishers.LI.alleles <- c(fishers.LI.alleles, fishers.allele.res$conf.int[1])
     fishers.UI.alleles <- c(fishers.UI.alleles, fishers.allele.res$conf.int[2])
     #OR
-    OR <- c(OR, (cont.table.allele[1]*cont.table.allele[4])/(cont.table.allele[2]*cont.table.allele[3]))
+    OR.res <- oddsratio.wald(cont.table.allele)
+    OR <- c(OR, OR.res$measure[2,1]); 
+    OR.low <- c(OR.low, OR.res$measure[2,2]); 
+    OR.high <- c(OR.high,OR.res$measure[2,3]);
+    
     
   }
   stats.data <- data.frame(allele = ACFREQ.df$allele, 
                            FishersAllelePVAL = fishers.pval.alleles, FishersAlleleOR = fishers.OR.alleles, 
                            FishersAlleleLI = fishers.LI.alleles, FishersAlleleUI = fishers.UI.alleles,
-                           ChiAllelePVAL = chi2.pval.alleles, ChiAlleleVAL = chi2.OR.alleles, OR = OR)
+                           ChiAllelePVAL = chi2.pval.alleles, ChiAlleleVAL = chi2.OR.alleles, OR = OR,
+                           OR.low = OR.low, OR.high = OR.high)
   stats.data[is.na(stats.data)] <- 0
   
   return(stats.data)
@@ -201,7 +208,7 @@ stats.data <- add_column(stats.data, FisherAllelePVAL.CORR = p.adjust(stats.data
 stats.data <- add_column(stats.data, ChiAllelePVAL.CORR = p.adjust(stats.data$ChiAllelePVAL), .after = "ChiAllelePVAL")
 
 # Write output
-HLA.alleles.df <- merge(stats.data[,c(1,which(grepl('Allele', colnames(stats.data))))],
+HLA.alleles.df <- merge(stats.data[,c(1,which(grepl('Allele', colnames(stats.data))),which(grepl("OR",colnames(stats.data))))],
                         ACFREQ.df[,c(which(grepl(paste(c('allele'), collapse = '|'), colnames(ACFREQ.df))))],
                         by = 'allele')
 # Write output

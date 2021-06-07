@@ -14,7 +14,7 @@ setwd("~/Documents/HLA_association_pipeline")
 
 # Import settings
 settings <- jsonlite::read_json("settings.json")
-
+options(stringsAsFactors = F)
 # Create comand
 `%notin%` <- Negate(`%in%`)
 
@@ -119,5 +119,5 @@ age.df <- data.frame(allele1 = c(allele, allele, "X"), allele2= c(allele, "X", "
                      T.PVAL.HOMO = c(NA, hetero.test$p.value, "Ref"))
 
 # Write 
-write.xlsx(x = age.df, file = "Outputs/Utils/Age_T_DR7Zyg.xlsx", sheet = "Sheet1")
+write.xlsx(x = age.df, file = "Outputs/Utils/Age_T_HH.xlsx", sheet = "Sheet1")
 

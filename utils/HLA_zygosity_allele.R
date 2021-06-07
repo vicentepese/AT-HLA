@@ -113,4 +113,4 @@ for (i in range(1,2)){
 
 # Write output
 write.xlsx(x = zyg.df, file = paste0(settings$Output$Zygosity, "HLA_zygosity_", allele2control,".xlsx"), row.names = F)
-
+  
