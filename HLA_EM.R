@@ -61,8 +61,8 @@ if (!settings$ethnicity %>% is_empty()){
 }
 
 # Filter out the alleles to exclude 
-alleles2control <- settings$allele2exclude %>% unlist()
-for (allele in alleles2control){
+allele2exclude <- settings$allele2exclude %>% unlist()
+for (allele in allele2exclude){
   
   # Parse locus and allele
   locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)

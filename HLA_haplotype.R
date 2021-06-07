@@ -61,16 +61,19 @@ if (!settings$ethnicity %>% is_empty()){
 }
 
 # Filter out the alleles to exclude 
-alleles2control <- settings$allele2exclude %>% unlist()
-for (allele in alleles2control){
-  
-  # Parse locus and allele
-  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
-  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-  
-  # Filter HLA calls 
-  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
-  
+allele2exclude <- settings$allele2exclude %>% unlist()
+# Filter out the alleles to exclude 
+if (!allele2exclude %>% is_empty()){
+  for (allele in allele2exclude){
+    
+    # Parse locus and allele
+    locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+    A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+    
+    # Filter HLA calls 
+    HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+    
+  }
 }
 
 # Delete files to allow output to be written

@@ -40,18 +40,20 @@ probs.df <- read.csv(settings$file$probs)
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
-alleles2control <- settings$allele2exclude %>% unlist()
+allele2exclude <- settings$allele2exclude %>% unlist()
 
 # Filter out the alleles to exclude 
-for (allele in alleles2control){
-  
-  # Parse locus and allele
-  locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
-  A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-  
-  # Filter HLA calls 
-  HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
-  
+if (!allele2exclude %>% is_empty()){
+  for (allele in allele2exclude){
+    
+    # Parse locus and allele
+    locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+    A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+    
+    # Filter HLA calls 
+    HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+    
+  }
 }
 
 # Parse HLA calls for which there is a phenotype 

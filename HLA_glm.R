@@ -60,11 +60,18 @@ if (!settings$ethnicity %>% is_empty()){
 }
 
 # Exclude allele
-if(!settings$allele2exclude %>% is_empty()){
-  a2exclude <- settings$allele2exclude %>% unlist();
-  locus <- a2exclude %>% strsplit("\\*") %>% unlist() %>% head(n=1); locus.ids <- paste0(rep(locus,2), c(".1", ".2"))
-  allele <- a2exclude %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-  HLA.df <- HLA.df %>% filter(get(locus.ids[1]) != allele & get(locus.ids[2]) != allele)
+allele2exclude <- settings$allele2exclude %>% unlist()
+if (!allele2exclude %>% is_empty()){
+  for (allele in allele2exclude){
+    
+    # Parse locus and allele
+    locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+    A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+    
+    # Filter HLA calls 
+    HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+    
+  }
 }
 
 # Delete files to allow output to be written
@@ -311,7 +318,7 @@ for (locus in loci){
   # Subset based on locus
   allele1 <- paste(locus, '.1',sep = '')
   allele2 <- paste(locus,'.2', sep =  '')
-  data.locus <- HLA.df[,c("sample.id",allele1, allele2)]
+  data.locus <- HLA.df[,c("sample.id",allele1, allele2)] 
   
   # Compute allele frequencies and counts, and carrier frequencies and counts
   ACFREQ.cases <- computeACFREQ(data.cases.filt, locus, 'case');
@@ -344,10 +351,10 @@ for (locus in loci){
   glm.data <- runLogisticRegression(locus, OHE.alleleFreq.data, OHE.carrierFreq.data, covars.df)
   
   # Create dataframes 
-  HLA.GLM_alleles.df <-merge(glm.data[,c(1,which(grepl('ALLELE', colnames(glm.data))))],
+  HLA.GLM_alleles.df <- merge(glm.data[,c(1,which(grepl('ALLELE', colnames(glm.data))))],
                              ACFREQ.df[,c(which(grepl(paste(c('A0','A1','A2', 'allele'), collapse = '|'), colnames(ACFREQ.df))))],
                              by = 'allele')
-  HLA.GLM_carriers.df <-merge(glm.data[,c(1,which(grepl('CARRIER', colnames(glm.data))))],
+  HLA.GLM_carriers.df <- merge(glm.data[,c(1,which(grepl('CARRIER', colnames(glm.data))))],
                               ACFREQ.df[,c(1,which(grepl(paste(c('A0','A1','A2', 'carrier'), collapse = '|'), colnames(ACFREQ.df))))],
                               by = 'allele')
   
