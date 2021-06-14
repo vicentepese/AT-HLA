@@ -26,10 +26,10 @@ probs.df <- read.csv(settings$file$probs)
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
-alleles2control <- settings$allele2exclude %>% unlist()
+allele2exclude <- settings$allele2exclude %>% unlist()
 
 # Filter out the alleles to exclude 
-for (allele in alleles2control){
+for (allele in allele2exclude){
   
   # Parse locus and allele
   locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)

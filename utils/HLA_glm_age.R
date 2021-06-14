@@ -44,11 +44,18 @@ if (!settings$ethnicity %>% is_empty()){
 }
 
 # Exclude allele
-if(!settings$allele2exclude %>% is_empty()){
-  a2exclude <- settings$allele2exclude %>% unlist();
-  locus <- a2exclude %>% strsplit("\\*") %>% unlist() %>% head(n=1); locus.ids <- paste0(rep(locus,2), c(".1", ".2"))
-  allele <- a2exclude %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-  HLA.df <- HLA.df %>% filter(get(locus.ids[1]) != allele & get(locus.ids[2]) != allele)
+allele2exclude <- settings$allele2exclude %>% unlist()
+if (!allele2exclude %>% is_empty()){
+  for (allele in allele2exclude){
+    
+    # Parse locus and allele
+    locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
+    A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
+    
+    # Filter HLA calls 
+    HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
+    
+  }
 }
 
 # Read demographics, merge with covars, and filter HLA
