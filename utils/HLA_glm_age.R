@@ -11,6 +11,7 @@ library(plyr)
 
 # Set working directory
 setwd("~/Documents/HLA_association_pipeline")
+options(stringsAsFactors = F)
 
 # Import settings
 settings <- jsonlite::read_json("settings.json")
@@ -62,15 +63,18 @@ if (!allele2exclude %>% is_empty()){
 demo.df <- read.table("Resources/demographics.csv", sep = ",", header = TRUE)
 demo.df$Age[is.na(demo.df$Age)] <- 0; demo.df$OnsetAge[is.na(demo.df$OnsetAge)] <- 0
 demo.df$Age <- demo.df$Age+demo.df$OnsetAge; demo.df$Age[demo.df$Age==0] <- NA
-demo.df$Sex <- as.factor(demo.df$Sex)
+demo.df$Sex <- as.numeric(as.factor(demo.df$Sex))-1
 covars.df <- covars.df %>% merge(demo.df[,c("sample.id", "Age", "OnsetAge", "Sex")], by = "sample.id")
+# demo.df <- read.table("Resources/mrs_scores.csv", sep = ",", header = TRUE)
+# demo.df$mrs.onset <- as.numeric(demo.df$mrs.onset)
+# covars.df <- covars.df %>% merge(demo.df[,c("FBDS","mrs.onset","mrs.max","mrs.last","sample.id")], by = "sample.id")
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
-# # Parse hetero
-# HLA.df <- HLA.df[xor(HLA.df$DRB1.1 == "07:01", HLA.df$DRB1.2 == "07:01"),]
-# HLA.df <- HLA.df[,c("sample.id","DRB1.1", "DRB1.2")]
+# Parse hetero
+HLA.df <- HLA.df[xor(HLA.df$DRB1.1 == "07:01", HLA.df$DRB1.2 == "07:01"),]
+HLA.df <- HLA.df[,c("sample.id","DRB1.1", "DRB1.2")]
 
 ########### ONE HOT ENCODING FUNCTIONS ###############
 
@@ -199,8 +203,8 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
   # Merge dataset to include PCs
   as2control <- settings$allele2control %>% unlist()
   alleles.freq <- colnames(OHE.alleleFreq.data)[-c(1,(ncol(OHE.alleleFreq.data)-length(as2control)):ncol(OHE.alleleFreq.data))]
-  OHE.alleleFreq.data <- merge(OHE.alleleFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Age", "OnsetAge", "Sex")], by = 'sample.id')
-  OHE.carrierFreq.data <- merge(OHE.carrierFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Age","OnsetAge", "Sex")], by = 'sample.id')
+  OHE.alleleFreq.data <- merge(OHE.alleleFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Sex")], by = 'sample.id')
+  OHE.carrierFreq.data <- merge(OHE.carrierFreq.data, covars.df[,c("sample.id", "PC1", "PC2", "PC3","Sex")], by = 'sample.id')
   
   # Remove alleles for control 
   locus.subset <- as2control[grepl(as2control, pattern = locus)]
@@ -222,7 +226,7 @@ runLogisticRegression = function(locus, OHE.alleleFreq.data, OHE.carrierFreq.dat
     
     # Create GLM formula as string and fit GLM
     glm.formula <- paste('Sex ~ `',allele, '` + PC1 + PC2 + PC3', control.alleles, sep = '')
-    
+
     # Fit GLM model
     Afreq.model <- glm(data = OHE.alleleFreq.data, 
                        formula = as.formula(glm.formula),
