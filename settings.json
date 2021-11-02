@@ -37,6 +37,8 @@
     "AA2control":[],
 
     "Haplotype":[],
-    "EM_haplo":[]
+    "EM_haplo":[],
+
+    "verbose":"True"
 
 }
