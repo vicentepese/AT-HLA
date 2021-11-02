@@ -43,6 +43,9 @@ settingsCheck = function(settings){
 settings <- jsonlite::read_json("settings.json")
 options(stringsAsFactors = F)
 
+# Check settings
+settingsCheck(settings)
+
 # Create comand
 `%notin%` <- Negate(`%in%`)
 

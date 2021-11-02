@@ -36,6 +36,74 @@ settingsCheck = function(settings){
     stop("Imputation probabilities file does not exist.")
   }
   
+  # Check parameters 
+  if (settings$prob_thr < 0 | settings$prob_thr > 1){
+    stop("The probability threshold must be between 0 and 1.")
+  }
+  if (settings$freq_thr < 0 | settings$prob_thr >1){
+    stop("The frequency threshold must be between 0 and 1.")
+  }
+  
+  # Throw warning 
+  if (settings$prob_thr == 1){
+    warning("Probability threshold is equal to 1. All cases will be included.")
+  }
+  
+}
+
+phenoCheck = function(covars.df){
+
+  # Get phenotype
+  pheno_labels <- covars.df$pheno %>% unique()
+
+  # Check that phenotype is between 0 and 1, or 1 and 2 
+  if (any(pheno_labels %notin% c(1,2))){  
+    covars.df$pheno <- covars.df$pheno - 1
+  } else if (any(pheno_labels %notin% c(0,1))){ 
+    stop("Phenotype labels are not 1 and 2, or 0 and 1.")
+  }
+  
+  # Get number of cases and controls
+  pheno_count <- covars.df$pheno  %>% table()
+  
+  # Check that there are cases and controls
+  if (pheno_count['0'] == 0){
+    stop("No controls in the covariates file.")
+  } else if (pheno['1'] == 0){
+    stop("No cases in the covariates file.")
+  }
+  
+  return(covars.df)
+}
+
+matchedControlsCheck = function(matched_controls){
+
+  # Check that the list is not empty
+  if (matched_controls %>% is_empty){
+    stop ("No matched controls were found for the given cases.")
+  }
+
+}
+
+alleleCheck = function(HLA.df, locus, A){
+
+  # Get alleles
+  alleles <- unique(c(HLA.df[,c(paste0(locus,".1"))], HLA.df[,c(paste0(locus,".2"))]))
+  
+  # Check that allele existst
+  if (A %notin% alleles){
+    stop("Allele to exclude not present in the data.")
+  }
+
+}
+
+ethnicityCheck = function(settings, ethnicity.df){
+  
+  # Check that ethnicities are in the data provided 
+  if (any(settings$ethnicity %notin% ethnicity.df$Population)){
+    stop("One of the provided ethnicities is not present in the data.")
+  }
+  
 }
 
 ########### INITIALIZATION ########### 
@@ -58,10 +126,8 @@ HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
-# Correct pheno
-if (2 %in% covars.df$pheno %>% table() %>% names()){
-  covars.df$pheno <- covars.df$pheno - 1
-}
+# Check pheno
+covars.df <- phenoCheck(covars.df)
 
 # If list of matched controls provided, filter
 if (!settings$file$matched_controls %>% is_empty()){
@@ -78,6 +144,9 @@ if (!settings$file$matched_controls %>% is_empty()){
   matched_controls <- match_cntrls.df %>% 
     filter(sample.id_case %in% HLA.cases.ids) %>% .[,2:ncol(match_cntrls.df)] %>% flatten() %>% unlist() %>% unique()
   ids <- c(HLA.cases.ids, matched_controls)
+  
+  # Check matched controls 
+  matchedControlsCheck(matched_controls)
   
   # Filter the HLA data, covariates and probabilities
   HLA.df <- HLA.df %>% filter(sample.id %in% ids)
@@ -102,6 +171,9 @@ if (!allele2exclude %>% is_empty()){
     locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
     A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
     
+    # Check allele
+    alleleCheck(HLA.df, locus, A)
+    
     # Filter HLA calls 
     HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
     
@@ -116,6 +188,11 @@ if (!settings$ethnicity %>% is_empty()){
   
   # Parse IDs in ethnicity/ies
   ethnicity.df <- read.csv(settings$file$ethnicity)
+  
+  # Check ethnicity
+  ethnicityCheck(settings, ethnicity.df)
+  
+  # Filter
   ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
   HLA.df <- HLA.df %>% 
     filter(sample.id %in% ethnicity.df.filt$sample.id)
