@@ -58,6 +58,11 @@ HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
+# Correct pheno
+if (2 %in% covars.df$pheno %>% table() %>% names()){
+  covars.df$pheno <- covars.df$pheno - 1
+}
+
 # If list of matched controls provided, filter
 if (!settings$file$matched_controls %>% is_empty()){
   
@@ -65,7 +70,7 @@ if (!settings$file$matched_controls %>% is_empty()){
   if (settings$verbose) print("Parsing matched controls.")
   
   # Get cases ids, and cases from data (may not be the same, e.g. sub-dataset of only tumors)
-  cases.ids <- covars.df %>% filter(pheno == 2) %>% select(sample.id) %>% unlist()
+  cases.ids <- covars.df %>% filter(pheno == 1) %>% select(sample.id) %>% unlist()
   HLA.cases.ids <- HLA.df %>% filter(sample.id %in% cases.ids) %>% .["sample.id"] %>% unlist()
   
   # Get list of matched controls and merge 
@@ -272,8 +277,8 @@ computeChi2 = function(ACFREQ.df){
 ########### MAIN LOOP ########### 
 
 # Get cases and controls and separate datasets
-cases.ids <- covars.df$sample.id[which(covars.df$pheno ==2)]
-controls.ids <- covars.df$sample.id[which(covars.df$pheno ==1)]
+cases.ids <- covars.df$sample.id[which(covars.df$pheno == 1)]
+controls.ids <- covars.df$sample.id[which(covars.df$pheno == 0)]
 data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
 data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 

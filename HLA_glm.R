@@ -22,6 +22,21 @@ library(data.table warn.conflicts = F)
 library(xlsx warn.conflicts = F)
 library(plyr warn.conflicts = F)
 
+########## ERROR HANDLING ########### 
+
+settingsCheck = function(settings){
+  
+  # Check files existence
+  if (!settings$file$HLA_Data %>% file.exists()){
+    stop("HLA data file does not exist.")
+  } else if (!settings$file$covars %>% file.exists()){
+    stop("Covariates file does not exist.")
+  } else if(!settings$file$probs %>% file.exists()){
+    stop("Imputation probabilities file does not exist.")
+  }
+  
+}
+
 ########### INITIALIZATION ########### 
 
 # Import settings
