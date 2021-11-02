@@ -22,21 +22,6 @@ library(data.table warn.conflicts = F)
 library(xlsx warn.conflicts = F)
 library(plyr warn.conflicts = F)
 
-########## ERROR HANDLING ########### 
-
-settingsCheck = function(settings){
-  
-  # Check files existence
-  if (!settings$file$HLA_Data %>% file.exists()){
-    stop("HLA data file does not exist.")
-  } else if (!settings$file$covars %>% file.exists()){
-    stop("Covariates file does not exist.")
-  } else if(!settings$file$probs %>% file.exists()){
-    stop("Imputation probabilities file does not exist.")
-  }
-  
-}
-
 ########### INITIALIZATION ########### 
 
 # Import settings
@@ -49,14 +34,40 @@ settingsCheck(settings)
 # Create comand
 `%notin%` <- Negate(`%in%`)
 
+# Verbose 
+if (settings$verbose) cat("Loading data, covariates, and imputation probabilities. \n")
+
 # Import HLA calls, covariates 
 HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
-# Correct pheno for logistic regression 
-if (2 %in% covars.df$pheno %>% table() %>% names()){
-  covars.df$pheno <- covars.df$pheno - 1
+# Check pheno
+covars.df <- phenoCheck(covars.df)
+
+# If list of matched controls provided, filter
+if (!settings$file$matched_controls %>% is_empty()){
+  
+  # Verbose
+  if (settings$verbose) cat("Parsing matched controls. \n")
+  
+  # Get cases ids, and cases from data (may not be the same, e.g. sub-dataset of only tumors)
+  cases.ids <- covars.df %>% filter(pheno == 1) %>% select(sample.id) %>% unlist()
+  HLA.cases.ids <- HLA.df %>% filter(sample.id %in% cases.ids) %>% .["sample.id"] %>% unlist()
+  
+  # Get list of matched controls and merge 
+  match_cntrls.df <- read.csv(settings$file$matched_controls)
+  matched_controls <- match_cntrls.df %>% 
+    filter(sample.id_case %in% HLA.cases.ids) %>% .[,2:ncol(match_cntrls.df)] %>% flatten() %>% unlist() %>% unique()
+  ids <- c(HLA.cases.ids, matched_controls)
+  
+  # Check matched controls 
+  matchedControlsCheck(matched_controls)
+  
+  # Filter the HLA data, covariates and probabilities
+  HLA.df <- HLA.df %>% filter(sample.id %in% ids)
+  covars.df <- covars.df %>% filter(sample.id %in% ids)
+  probs.df <- probs.df %>% filter(sample.id %in% ids)
 }
 
 # Read options
@@ -64,33 +75,55 @@ prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
 alleles2control <- settings$allele2control %>% unlist()
 
-# Parse HLA calls for which there is a phenotype 
-HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
-
 # Parse HLA calls based on ethnicity, if provided
 if (!settings$ethnicity %>% is_empty()){
   
   # Parse IDs in ethnicity/ies
   ethnicity.df <- read.csv(settings$file$ethnicity)
+  
+  # Check ethnicity
+  ethnicityCheck(settings, ethnicity.df)
+  
+  # Filter
   ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
   HLA.df <- HLA.df %>% 
     filter(sample.id %in% ethnicity.df.filt$sample.id)
+  
+  # Verbose
+  if (settings$verbose) cat(paste("Ethnicities included:", paste(settings$ethnicity, sep =" "), "\n", sep = " "))
+
 }
 
 # Exclude allele
 allele2exclude <- settings$allele2exclude %>% unlist()
 if (!allele2exclude %>% is_empty()){
+  
+  # Verbose 
+  if (settings$verbose) cat("Excluded alleles: \n")
+  
   for (allele in allele2exclude){
-    
+
     # Parse locus and allele
     locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
     A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
     
+    # Check allele
+    alleleCheck(HLA.df, locus, A)
+    
     # Filter HLA calls 
     HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
     
+    # Verbose
+    if (settings$verbose) cat(allele2exclude)
+    
   }
 }
+
+# Parse HLA calls for which there is a phenotype 
+HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
+
+# Verbose 
+if (settings$verbose) cat("Deleting previous files.")
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)
@@ -326,7 +359,7 @@ models.df <- data.frame()
 for (locus in loci){
   
   # Print 
-  print(paste0("Current loci: ", locus))
+  cat(paste0("Conducting analysis on locus: ", locus, "\n"))
   
   # Filter out subjects with imputation probability threshold
   probs.df_filt <- probs.df %>% filter(get(paste0("prob.", locus)) > prob_thr)
@@ -400,3 +433,6 @@ for (locus in loci){
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
+
+# Verbose
+if (settings$verbose) cat(paste("Outputs saved in:", settings$Output$Chi2, "\n", sep=" "))
