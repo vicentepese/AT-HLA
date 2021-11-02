@@ -30,8 +30,8 @@
 
     "ethnicity":[],
 
-    "allele2control":["DRB8*05:01"],
-    "allele2exclude":["DRB8*05:01"],
+    "allele2control":[],
+    "allele2exclude":[],
     "skipAllele":[],
 
     "AA2control":[],
