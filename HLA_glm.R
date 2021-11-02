@@ -15,12 +15,12 @@
 ## ---------------------------
 
 # Import libraries
-library(jsonlite)
-library(tidyverse)
-library(readr)
-library(data.table)
-library(xlsx)
-library(plyr)
+library(jsonlite, warn.conflicts = F)
+suppressPackageStartupMessages(library(tidyverse))
+library(readr, warn.conflicts = F)
+library(data.table warn.conflicts = F)
+library(xlsx warn.conflicts = F)
+library(plyr warn.conflicts = F)
 
 ########### INITIALIZATION ########### 
 
