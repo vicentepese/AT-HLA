@@ -48,7 +48,7 @@ probs.df <- read.csv(settings$file$probs)
 covars.df <- phenoCheck(covars.df)
 
 # If list of matched controls provided, filter
-if (!settings$file$matched_controls %>% is_empty()){
+if (!settings$file$matched_controls == ""){
   
   # Verbose
   if (settings$verbose) cat("Parsing matched controls. \n")

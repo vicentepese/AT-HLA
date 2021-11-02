@@ -16,11 +16,13 @@
 
 # Import libraries
 library(jsonlite, warn.conflicts = F)
+library(plyr, warn.conflicts = F)
 suppressPackageStartupMessages(library(tidyverse))
 library(readr, warn.conflicts = F)
-library(data.table warn.conflicts = F)
-library(xlsx warn.conflicts = F)
-library(plyr warn.conflicts = F)
+library(data.table, warn.conflicts = F)
+library(xlsx, warn.conflicts = F)
+source("utils/error_handling.R")
+
 
 ########### INITIALIZATION ########### 
 
@@ -46,7 +48,7 @@ probs.df <- read.csv(settings$file$probs)
 covars.df <- phenoCheck(covars.df)
 
 # If list of matched controls provided, filter
-if (!settings$file$matched_controls %>% is_empty()){
+if (!settings$file$matched_controls == ""){
   
   # Verbose
   if (settings$verbose) cat("Parsing matched controls. \n")
@@ -128,7 +130,7 @@ if (settings$verbose) cat("Deleting previous files.")
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)
 file.names <- file.names[!grepl(x = file.names, pattern = "iter")]
-file.remove(file.names)
+invisible(file.remove(file.names))
 
 ########### ONE HOT ENCODING FUNCTIONS ###############
 
@@ -177,6 +179,10 @@ controlAllele = function(settings, data.filt){
     allele2control = A %>% strsplit('\\*') %>% unlist() %>% .[2]
     allele1 <- paste(locus, '.1', sep = '')
     allele2 <- paste(locus, '.2', sep = '')
+
+    # Check alleles 
+    alleleCheck(data.filt, locus, allele1)
+    alleleCheck(data.filt, locus, allele2)
     
     # Get subjects
     alleleControl.df[A] <- as.logical(c(data.filt[,c(allele1)] %>% as.character() == allele2control) + 

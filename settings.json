@@ -22,16 +22,16 @@
         "probs":"Resources/probs.csv",
         "AA_alignment": "Resources/AminoAcid_alignment_2021.csv",
         "ethnicity":"Resources/ethnicity.csv",
-        "matched_controls":"Resources/matched_controls.csv"
+        "matched_controls": ""
     },
 
     "prob_thr":0.3,
     "freq_thr":0.05,
 
-    "ethnicity":["AAUS"],
+    "ethnicity":[],
 
-    "allele2control":[],
-    "allele2exclude":[],
+    "allele2control":["DRB8*05:01"],
+    "allele2exclude":["DRB8*05:01"],
     "skipAllele":[],
 
     "AA2control":[],
