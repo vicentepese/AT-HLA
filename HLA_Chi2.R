@@ -21,7 +21,7 @@ suppressPackageStartupMessages(library(tidyverse))
 library(readr,warn.conflicts = F)
 library(data.table, warn.conflicts = F)
 library(xlsx,warn.conflicts = F)
-library(utils,warn.conflicts = f)
+library(utils,warn.conflicts = F)
 
 ########## ERROR HANDLING ########### 
 

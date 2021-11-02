@@ -28,7 +28,7 @@
     "prob_thr":0.3,
     "freq_thr":0.05,
 
-    "ethnicity":[],
+    "ethnicity":["EEUR"],
 
     "allele2control":[],
     "allele2exclude":[],
