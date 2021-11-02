@@ -47,6 +47,9 @@ options(stringsAsFactors = F)
 # Check settings
 settingsCheck(settings)
 
+# Verbose 
+if (settings$verbose) print("Loading data, covariates, and imputation probabilities.")
+
 # Create command
 `%notin%` <- Negate(`%in%`)
 
@@ -57,6 +60,9 @@ probs.df <- read.csv(settings$file$probs)
 
 # If list of matched controls provided, filter
 if (!settings$file$matched_controls %>% is_empty()){
+  
+  # Verbose
+  if (settings$verbose) print("Parsing matched controls.")
   
   # Get cases ids, and cases from data (may not be the same, e.g. sub-dataset of only tumors)
   cases.ids <- covars.df %>% filter(pheno == 2) %>% select(sample.id) %>% unlist()
@@ -81,8 +87,12 @@ allele2exclude <- settings$allele2exclude %>% unlist()
 
 # Filter out the alleles to exclude 
 if (!allele2exclude %>% is_empty()){
+  
+  # Verbose 
+  if (settings$verbose) print("Excluded alleles: ")
+  
   for (allele in allele2exclude){
-    
+
     # Parse locus and allele
     locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
     A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
@@ -90,11 +100,11 @@ if (!allele2exclude %>% is_empty()){
     # Filter HLA calls 
     HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
     
+    # Verbose
+    if (settings$verbose) print(allele2exclude)
+    
   }
 }
-
-# Parse HLA calls for which there is a phenotype 
-HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
 # Parse HLA calls based on ethnicity, if provided
 if (!settings$ethnicity %>% is_empty()){
@@ -104,12 +114,21 @@ if (!settings$ethnicity %>% is_empty()){
   ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
   HLA.df <- HLA.df %>% 
     filter(sample.id %in% ethnicity.df.filt$sample.id)
+  
+  # Verbose
+  if (settings$verbose) print(paste("Ethnicities included:", paste(settings$ethnicity, sep =" "), sep = " "))
+
 }
- 
+
+# Parse HLA calls for which there is a phenotype 
+HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
+
+# Verbose 
+if (settings$verbose) print("Deleting previous files.")
+
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
 file.remove(file.names)
-
 
 ########### COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ########### 
 
@@ -264,12 +283,12 @@ pvals <- c(); l1group <- c(); l2group <- c(); l2locus <- c()
 # For each locus 
 loci <- colnames(HLA.df)[grepl(colnames(HLA.df), pattern = "\\.1")]
 loci <- loci %>% lapply(function(x) strsplit(x, split = "\\.") %>% unlist() %>% head(n=1)) %>% unlist() 
-
 idx <- 1
+
 for (locus in loci){
   
   # Verbose
-  print(paste0("Current locus: ", locus))
+  print(paste0("Conducting analysis on locus: ", locus))
   
   # Filter out subjects with imputation probability threshold
   probs.df_filt <- probs.df %>% filter(get(paste0("prob.", locus)) > prob_thr)
@@ -330,4 +349,7 @@ for (locus in loci){
              col.names = TRUE, row.names = FALSE, append = TRUE)
   
 }
+
+# Verbose
+if (settings$verbose) print(paste("Outputs saved in:", settings$Output$Chi2, sep=" "))
 
