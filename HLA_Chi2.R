@@ -50,10 +50,23 @@ settingsCheck(settings)
 # Create command
 `%notin%` <- Negate(`%in%`)
 
-# Import HLA calls, covariates 
+# Import HLA calls, covariates, and matched controls
 HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
+match_cntrls.df <- read.csv(settings$file$matched_controls)
+
+# Get list of cases and controls 
+cases.ids <- covars.df %>% filter(pheno == 2) %>% select(sample.id) %>% unlist()
+HLA.cases.ids <- HLA.df %>% filter(sample.id %in% cases.ids) %>% .["sample.id"] %>% unlist()
+matched_controls <- match_cntrls.df %>% 
+  filter(sample.id_case %in% HLA.cases.ids) %>% .[,2:ncol(match_cntrls.df)] %>% flatten() %>% unlist() %>% unique()
+ids <- c(HLA.cases.ids, matched_controls)
+
+# Filter cases and matched controls
+HLA.df <- HLA.df %>% filter(sample.id %in% ids)
+covars.df <- covars.df %>% filter(sample.id %in% ids)
+probs.df <- probs.df %>% filter(sample.id %in% ids)
 
 # Read options
 prob_thr <- settings$prob_thr
@@ -86,7 +99,7 @@ if (!settings$ethnicity %>% is_empty()){
   HLA.df <- HLA.df %>% 
     filter(sample.id %in% ethnicity.df.filt$sample.id)
 }
-
+ 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
 file.remove(file.names)
