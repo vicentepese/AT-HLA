@@ -15,7 +15,7 @@
 ## ---------------------------
 
 # Import libraries
-library(jsonlite,warn.conflicts = F)
+library(jsonlite, warn.conflicts = F)
 library(plyr, warn.conflicts = F)
 suppressPackageStartupMessages(library(tidyverse))
 library(readr,warn.conflicts = F)
@@ -54,19 +54,25 @@ settingsCheck(settings)
 HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
-match_cntrls.df <- read.csv(settings$file$matched_controls)
 
-# Get list of cases and controls 
-cases.ids <- covars.df %>% filter(pheno == 2) %>% select(sample.id) %>% unlist()
-HLA.cases.ids <- HLA.df %>% filter(sample.id %in% cases.ids) %>% .["sample.id"] %>% unlist()
-matched_controls <- match_cntrls.df %>% 
-  filter(sample.id_case %in% HLA.cases.ids) %>% .[,2:ncol(match_cntrls.df)] %>% flatten() %>% unlist() %>% unique()
-ids <- c(HLA.cases.ids, matched_controls)
-
-# Filter cases and matched controls
-HLA.df <- HLA.df %>% filter(sample.id %in% ids)
-covars.df <- covars.df %>% filter(sample.id %in% ids)
-probs.df <- probs.df %>% filter(sample.id %in% ids)
+# If list of matched controls provided, filter
+if (!settings$file$matched_controls %>% is_empty()){
+  
+  # Get cases ids, and cases from data (may not be the same, e.g. sub-dataset of only tumors)
+  cases.ids <- covars.df %>% filter(pheno == 2) %>% select(sample.id) %>% unlist()
+  HLA.cases.ids <- HLA.df %>% filter(sample.id %in% cases.ids) %>% .["sample.id"] %>% unlist()
+  
+  # Get list of matched controls and merge 
+  match_cntrls.df <- read.csv(settings$file$matched_controls)
+  matched_controls <- match_cntrls.df %>% 
+    filter(sample.id_case %in% HLA.cases.ids) %>% .[,2:ncol(match_cntrls.df)] %>% flatten() %>% unlist() %>% unique()
+  ids <- c(HLA.cases.ids, matched_controls)
+  
+  # Filter the HLA data, covariates and probabilities
+  HLA.df <- HLA.df %>% filter(sample.id %in% ids)
+  covars.df <- covars.df %>% filter(sample.id %in% ids)
+  probs.df <- probs.df %>% filter(sample.id %in% ids)
+}
 
 # Read options
 prob_thr <- settings$prob_thr
