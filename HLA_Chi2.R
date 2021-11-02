@@ -37,16 +37,19 @@ settingsCheck = function(settings){
   }
   
   # Check parameters 
-  if (settings$prob_thr < 0 | settings$prob_thr > 1){
+  if (settings$prob_thr < 0 | settings$prob_thr >= 1){
     stop("The probability threshold must be between 0 and 1.")
   }
-  if (settings$freq_thr < 0 | settings$prob_thr >1){
+  if (settings$freq_thr < 0 | settings$prob_thr >=1){
     stop("The frequency threshold must be between 0 and 1.")
   }
   
   # Throw warning 
-  if (settings$prob_thr == 1){
-    warning("Probability threshold is equal to 1. All cases will be included.")
+  if (settings$prob_thr == 0){
+    warning("Probability threshold is set to 0. All cases will be included.")
+  } 
+  if (settings$freq_thr == 0){
+    warning("Frequency threshold is set to 0. All alleles will be included.")
   }
   
 }
@@ -57,7 +60,7 @@ phenoCheck = function(covars.df){
   pheno_labels <- covars.df$pheno %>% unique()
 
   # Check that phenotype is between 0 and 1, or 1 and 2 
-  if (any(pheno_labels %notin% c(1,2))){  
+  if (all(pheno_labels %in% c(1,2))){  
     covars.df$pheno <- covars.df$pheno - 1
   } else if (any(pheno_labels %notin% c(0,1))){ 
     stop("Phenotype labels are not 1 and 2, or 0 and 1.")
@@ -69,7 +72,7 @@ phenoCheck = function(covars.df){
   # Check that there are cases and controls
   if (pheno_count['0'] == 0){
     stop("No controls in the covariates file.")
-  } else if (pheno['1'] == 0){
+  } else if (pheno_count['1'] == 0){
     stop("No cases in the covariates file.")
   }
   
@@ -116,7 +119,7 @@ options(stringsAsFactors = F)
 settingsCheck(settings)
 
 # Verbose 
-if (settings$verbose) print("Loading data, covariates, and imputation probabilities.")
+if (settings$verbose) cat("Loading data, covariates, and imputation probabilities. \n")
 
 # Create command
 `%notin%` <- Negate(`%in%`)
@@ -133,7 +136,7 @@ covars.df <- phenoCheck(covars.df)
 if (!settings$file$matched_controls %>% is_empty()){
   
   # Verbose
-  if (settings$verbose) print("Parsing matched controls.")
+  if (settings$verbose) cat("Parsing matched controls. \n")
   
   # Get cases ids, and cases from data (may not be the same, e.g. sub-dataset of only tumors)
   cases.ids <- covars.df %>% filter(pheno == 1) %>% select(sample.id) %>% unlist()
@@ -163,7 +166,7 @@ allele2exclude <- settings$allele2exclude %>% unlist()
 if (!allele2exclude %>% is_empty()){
   
   # Verbose 
-  if (settings$verbose) print("Excluded alleles: ")
+  if (settings$verbose) cat("Excluded alleles: \n")
   
   for (allele in allele2exclude){
 
@@ -178,7 +181,7 @@ if (!allele2exclude %>% is_empty()){
     HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
     
     # Verbose
-    if (settings$verbose) print(allele2exclude)
+    if (settings$verbose) cat(allele2exclude)
     
   }
 }
@@ -198,7 +201,7 @@ if (!settings$ethnicity %>% is_empty()){
     filter(sample.id %in% ethnicity.df.filt$sample.id)
   
   # Verbose
-  if (settings$verbose) print(paste("Ethnicities included:", paste(settings$ethnicity, sep =" "), sep = " "))
+  if (settings$verbose) cat(paste("Ethnicities included:", paste(settings$ethnicity, sep =" "), "\n", sep = " "))
 
 }
 
@@ -206,11 +209,11 @@ if (!settings$ethnicity %>% is_empty()){
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
 # Verbose 
-if (settings$verbose) print("Deleting previous files.")
+if (settings$verbose) cat("Deleting previous files.")
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
-file.remove(file.names)
+invisible(file.remove(file.names))
 
 ########### COMPUTE ALLELE/CARRIER COUNT/FREQUENCIES ########### 
 
@@ -370,7 +373,7 @@ idx <- 1
 for (locus in loci){
   
   # Verbose
-  print(paste0("Conducting analysis on locus: ", locus))
+  cat(paste0("Conducting analysis on locus: ", locus, "\n"))
   
   # Filter out subjects with imputation probability threshold
   probs.df_filt <- probs.df %>% filter(get(paste0("prob.", locus)) > prob_thr)
@@ -426,12 +429,12 @@ for (locus in loci){
   
   # Write 
   write.xlsx(x = HLA.alleles.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
-             col.names = TRUE, row.names = FALSE, append = TRUE)
+             col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
   write.xlsx(x = HLA.carriers.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
-             col.names = TRUE, row.names = FALSE, append = TRUE)
+             col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
   
 }
 
 # Verbose
-if (settings$verbose) print(paste("Outputs saved in:", settings$Output$Chi2, sep=" "))
+if (settings$verbose) cat(paste("Outputs saved in:", settings$Output$Chi2, "\n", sep=" "))
 

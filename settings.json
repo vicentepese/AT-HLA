@@ -25,10 +25,10 @@
         "matched_controls":"Resources/matched_controls.csv"
     },
 
-    "prob_thr":0.3,
+    "prob_thr":0,
     "freq_thr":0.05,
 
-    "ethnicity":["EEUR"],
+    "ethnicity":[],
 
     "allele2control":[],
     "allele2exclude":[],
