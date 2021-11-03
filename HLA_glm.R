@@ -99,6 +99,9 @@ controlAllele = function(settings, data.filt){
   # Get unique loci 
   lociControl = lapply(As2control, function(x) x %>% strsplit('\\*') %>% unlist() %>% .[1]) %>% unlist() %>% unique() 
   
+  # Verbose
+  if (settings$verbose) cat("Controlling for alleles: \n")
+
   # For each allele 
   alleleControl.df = data.frame(sample.id = data.filt$sample.id)
   for (A in As2control){
@@ -110,8 +113,10 @@ controlAllele = function(settings, data.filt){
     allele2 <- paste(locus, '.2', sep = '')
 
     # Check alleles 
-    alleleCheck(data.filt, locus, allele1)
-    alleleCheck(data.filt, locus, allele2)
+    alleleCheck(data.filt, locus, allele2control)
+
+    # Verbose
+    if (settings$verbose) cat(paste0("\t", A, "\n"))
     
     # Get subjects
     alleleControl.df[A] <- as.logical(c(data.filt[,c(allele1)] %>% as.character() == allele2control) + 
