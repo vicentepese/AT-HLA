@@ -52,7 +52,7 @@ freq_thr <- settings$freq_thr*100
 alleles2control <- settings$allele2control %>% unlist()
 
 # Verbose 
-if (settings$verbose) cat("Deleting previous files.")
+if (settings$verbose) cat("Deleting previous files. \n")
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$Chi2, full.names = TRUE)
@@ -206,7 +206,9 @@ data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
 data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 
 # Initialize multiple-test correction 
-pvals <- c(); l1group <- c(); l2group <- c(); l2locus <- c()
+pvals <- c(); l1group <- c(); l2group <- c(); l2locus <- c(); 
+wb_carrier <- createWorkbook(type='xlsx')
+wb_allele <- createWorkbook(type = 'xlsx')
 
 # For each locus 
 loci <- colnames(HLA.df)[grepl(colnames(HLA.df), pattern = "\\.1")]
@@ -271,12 +273,19 @@ for (locus in loci){
   HLA.carriers.df_filt <- HLA.carriers.df_filt %>% rbind.fill(HLA.carriers.df %>% filter(allele %notin% HLA.carriers.df_filt$allele))
   
   # Write 
-  write.xlsx(x = HLA.alleles.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
-             col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
-  write.xlsx(x = HLA.carriers.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
-             col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
-  
+  # write.xlsx(x = HLA.alleles.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
+  #            col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
+  # write.xlsx(x = HLA.carriers.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
+  #            col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
+  sheet.allele <- createSheet(wb = wb_allele, sheetName = locus)
+  addDataFrame(HLA.alleles.df_filt, sheet.allele, startRow = 1, startColumn = 1)
+  sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
+  addDataFrame(HLA.carriers.df_filt, sheet.carrier, startRow = 1, startColumn = 1)
 }
+
+# Save 
+saveWorkbook(wb_allele, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''))
+saveWorkbook(wb_carrier, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''))
 
 # Verbose
 if (settings$verbose) cat(paste("Outputs saved in:", settings$Output$Chi2, "\n", sep=" "))
