@@ -290,6 +290,10 @@ controlAllele.df <- controlAllele(settings, HLA.df)
 # Iterate over loci for univariate analysis
 models.df <- data.frame()
 
+# Create workbooks
+wb_carrier <- createWorkbook(type='xlsx')
+wb_allele <- createWorkbook(type = 'xlsx')
+
 # For each locus 
 for (locus in loci){
   
@@ -359,15 +363,18 @@ for (locus in loci){
   # Rbind with non-corrected alleles 
   HLA.GLM_alleles.df_filt <- HLA.GLM_alleles.df_filt %>% rbind.fill(HLA.GLM_alleles.df %>% filter(allele %notin% HLA.GLM_alleles.df_filt$allele))
   HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df_filt %>% rbind.fill(HLA.GLM_carriers.df %>% filter(allele %notin% HLA.GLM_carriers.df_filt$allele))
-  
-  
-  # Write to excel output
-  write.xlsx(x = HLA.GLM_alleles.df_filt, file = paste(settings$Output$GLM, 'HLA_GLM_Alleles','.xlsx', sep = ''), sheetName = locus,
-             col.names = TRUE, row.names = FALSE, append = TRUE)
-  write.xlsx(x = HLA.GLM_carriers.df_filt, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers','.xlsx', sep = ''), sheetName = locus,
-             col.names = TRUE, row.names = FALSE, append = TRUE)
-  
+      
+  # Write in workbooks
+  sheet.allele <- createSheet(wb = wb_allele, sheetName = locus)
+  addDataFrame(HLA.GLM_alleles.df_filt, sheet.allele, startRow = 1, startColumn = 1)
+  sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
+  addDataFrame(HLA.GLM_carriers.df_filt, sheet.carrier, startRow = 1, startColumn = 1)
 }
+  
+
+# Save workbooks
+saveWorkbook(wb_allele, file = paste0(settings$Output$GLM, 'HLA_AnalysisAlleles','.xlsx', sep = ''))
+saveWorkbook(wb_carrier, file = paste0(settings$Output$GLM, 'HLA_AnalysisCarriers','.xlsx', sep = ''))
 
 # Verbose
-if (settings$verbose) cat(paste("Outputs saved in:", settings$Output$Chi2, "\n", sep=" "))
+if (settings$verbose) cat(paste("Outputs saved in:", settings$Output$GLM, "\n", sep=" "))

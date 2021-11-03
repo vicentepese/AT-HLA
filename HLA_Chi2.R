@@ -272,18 +272,14 @@ for (locus in loci){
   HLA.alleles.df_filt <- HLA.alleles.df_filt %>% rbind.fill(HLA.alleles.df %>% filter(allele %notin% HLA.alleles.df_filt$allele))
   HLA.carriers.df_filt <- HLA.carriers.df_filt %>% rbind.fill(HLA.carriers.df %>% filter(allele %notin% HLA.carriers.df_filt$allele))
   
-  # Write 
-  # write.xlsx(x = HLA.alleles.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''), sheetName = locus,
-  #            col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
-  # write.xlsx(x = HLA.carriers.df_filt, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''), sheetName = locus,
-  #            col.names = TRUE, row.names = FALSE, append = TRUE) %>% invisible()
+  # Write in workbooks
   sheet.allele <- createSheet(wb = wb_allele, sheetName = locus)
   addDataFrame(HLA.alleles.df_filt, sheet.allele, startRow = 1, startColumn = 1)
   sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
   addDataFrame(HLA.carriers.df_filt, sheet.carrier, startRow = 1, startColumn = 1)
 }
 
-# Save 
+# Save workbooks
 saveWorkbook(wb_allele, file = paste0(settings$Output$Chi2, 'HLA_AnalysisAlleles','.xlsx', sep = ''))
 saveWorkbook(wb_carrier, file = paste0(settings$Output$Chi2, 'HLA_AnalysisCarriers','.xlsx', sep = ''))
 
