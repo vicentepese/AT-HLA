@@ -15,13 +15,15 @@
 ## ---------------------------
 
 # Import libraries
-library(jsonlite)
-library(tidyverse)
-library(readr)
-library(data.table)
-library(xlsx)
-library(plyr)
-library(epitools)
+library(jsonlite, warn.conflicts = F)
+library(plyr, warn.conflicts = F)
+suppressPackageStartupMessages(library(tidyverse))
+library(readr, warn.conflicts = F)
+library(data.table, warn.conflicts = F)
+library(xlsx, warn.conflicts = F)
+library(epitools, warn.conflicts = F)
+source("utils/error_handling.R")
+source("utils/initialize_data.R")
 
 ########### INITIALIZATION ########### 
 
@@ -29,18 +31,25 @@ library(epitools)
 settings <- jsonlite::read_json("settings.json")
 options(stringsAsFactors = F)
 
+# Check settings
+settingsCheck(settings)
+
 # Create comand
 `%notin%` <- Negate(`%in%`)
+
+# Verbose 
+if (settings$verbose) cat("Loading data, covariates, and imputation probabilities. \n")
 
 # Import HLA calls, covariates 
 HLA.df <- read.csv(settings$file$HLA_Data)
 covars.df <- read.csv(settings$file$covars)
 probs.df <- read.csv(settings$file$probs)
 
-# Correct pheno for simplicity
-if (2 %in% covars.df$pheno %>% table() %>% names()){
-  covars.df$pheno <- covars.df$pheno - 1
-}
+# Initialize data
+data_init = initialize_data(settings)
+HLA.df <- data_init$HLA.df
+covars.df <- data_init$covars.df
+probs.df <- data_init$probs.df
 
 # Read options
 prob_thr <- settings$prob_thr
@@ -50,36 +59,13 @@ haplotype <- settings$Haplotype %>% unlist()
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
-# Parse HLA calls based on ethnicity, if provided
-if (!settings$ethnicity %>% is_empty()){
-  
-  # Parse IDs in ethnicity/ies
-  ethnicity.df <- read.csv(settings$file$ethnicity)
-  ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
-  HLA.df <- HLA.df %>% 
-    filter(sample.id %in% ethnicity.df.filt$sample.id)
-}
-
-# Filter out the alleles to exclude 
-allele2exclude <- settings$allele2exclude %>% unlist()
-# Filter out the alleles to exclude 
-if (!allele2exclude %>% is_empty()){
-  for (allele in allele2exclude){
-    
-    # Parse locus and allele
-    locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
-    A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-    
-    # Filter HLA calls 
-    HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
-    
-  }
-}
+# Verbose 
+if (settings$verbose) cat("Deleting previous files. \n")
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$Haplotype, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "HLA_Haplotype.")]
-file.remove(file.names)
+invisible(file.remove(file.names))
 
 ########### COUNT HAPLOTYPES ########### 
 
@@ -129,7 +115,6 @@ countHaplo = function(settings, HLA.df, covars.df){
   NcontrolsHomo<- homo.haplo %>% filter(sample.id %in% controls.ids) %>% nrow();
   NcasesRef <- ref.haplo %>% filter(sample.id %in% cases.ids) %>% nrow();
   NcontrolsRef <- ref.haplo %>% filter(sample.id %in% controls.ids) %>% nrow();
-  
   
   # Compute frequencies 
   FreqCasesHetero <- NcasesHetero / NCases *100; FreqControlsHetero <- NcontrolsHetero / Ncontrols *100
@@ -188,8 +173,20 @@ probs.df.filt  <- paste0(rep())
 probs.df.filt <- probs.df %>% filter_at(.vars = probs.loci.id, all_vars(.>prob_thr))
 HLA.df <- HLA.df %>% filter(sample.id %in% probs.df.filt$sample.id)
 
+# Verbose 
+if (settings$verbose) cat("Counting haplotypes. \n")
+
 # Count haplotypes 
 haplo.df <- countHaplo(settings, HLA.df, covars.df)
 
+# Verbose
+if (settings$verbose) cat("Haplotypes counted. \nWriting to file. \n")
+
 # Write to excel 
-write.xlsx(x = haplo.df, file = paste0(settings$Output$Haplotype, "HLA_Haplotype.xlsx"), col.names = TRUE, row.names = FALSE, append = TRUE)
+wb_haplo <- createWorkbook(type="xlsx")
+sheet.haplo <- createSheet(wb = wb_haplo, sheet="Haplotype_count")
+addDataFrame(haplo.df, sheet.haplo, startRow = 1, startColumn = 1, row.names=FALSE)
+saveWorkbook(wb_haplo, file =  paste0(settings$Output$Haplotype, "HLA_Haplotype.xlsx"))
+
+# Verbose
+if (settings$verbose)  cat(paste("Outputs saved in:", settings$Output$Haplotype, "\n", sep=" "))

@@ -36,7 +36,7 @@
 
     "AA2control":[],
 
-    "Haplotype":[],
+    "Haplotype":["DQA1*02:01","DRB1*07:01"],
     "EM_haplo":[],
 
     "verbose":"True"
