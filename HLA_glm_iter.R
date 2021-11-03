@@ -16,12 +16,15 @@
 ## ---------------------------
 
 # Import libraries
-library(jsonlite)
-library(tidyverse)
-library(readr)
-library(data.table)
-library(xlsx)
-library(plyr)
+library(jsonlite, warn.conflicts = F)
+library(plyr, warn.conflicts = F)
+suppressPackageStartupMessages(library(tidyverse))
+library(readr,warn.conflicts = F)
+library(data.table, warn.conflicts = F)
+library(xlsx,warn.conflicts = F)
+source("utils/error_handling.R")
+source("utils/initialize_data.R")
+
 
 ########## IMPORT ########## 
 
@@ -29,58 +32,36 @@ library(plyr)
 settings <- jsonlite::read_json("settings.json")
 options(stringsAsFactors = F)
 
+# Check settings
+settingsCheck(settings)
+
 # Create comand
 `%notin%` <- Negate(`%in%`)
 
-# Import HLA calls, covariates 
-HLA.df <- read.csv(settings$file$HLA_Data)
-covars.df <- read.csv(settings$file$covars)
-probs.df <- read.csv(settings$file$probs)
+# Verbose 
+if (settings$verbose) cat("Loading data, covariates, and imputation probabilities. \n")
 
-# Correct pheno for logistic regression 
-if (2 %in% covars.df$pheno %>% table() %>% names()){
-  covars.df$pheno <- covars.df$pheno - 1
-}
+# Initialize data
+data_init = initialize_data(settings)
+HLA.df <- data_init$HLA.df
+covars.df <- data_init$covars.df
+probs.df <- data_init$probs.df
 
 # Read options
 prob_thr <- settings$prob_thr
 freq_thr <- settings$freq_thr*100
-as2control <- settings$allele2control
+as2control <- settings$allele2control %>% unlist()
 
 # Parse HLA calls for which there is a phenotype 
 HLA.df <- HLA.df %>% filter(sample.id %in% covars.df$sample.id)
 
-# Parse HLA calls based on ethnicity, if provided
-if (!settings$ethnicity %>% is_empty()){
-  
-  # Parse IDs in ethnicity/ies
-  ethnicity.df <- read.csv(settings$file$ethnicity)
-  ethnicity.df.filt <- ethnicity.df %>% filter(Population %in% settings$ethnicity %>% unlist())
-  HLA.df <- HLA.df %>% 
-    filter(sample.id %in% ethnicity.df.filt$sample.id)
-}
-
-
-# Exclude allele
-allele2exclude <- settings$allele2exclude %>% unlist()
-a2exclude <- settings$allele2exclude %>% unlist();
-if (!a2exclude %>% is_empty()){
-  for (allele in a2exclude){
-    
-    # Parse locus and allele
-    locus <- allele %>% strsplit("\\*") %>% unlist() %>% head(n=1)
-    A <- allele %>% strsplit("\\*") %>% unlist() %>% tail(n=1)
-    
-    # Filter HLA calls 
-    HLA.df <- HLA.df[which(HLA.df[,paste0(locus,".1")] != A & HLA.df[,paste0(locus,".2")] != A),]
-    
-  }
-}
+# Verbose 
+if (settings$verbose) cat("Deleting previous files. \n")
 
 # Delete files to allow output to be written
 file.names <- list.files(settings$Output$GLM, full.names = TRUE)
 file.names <- file.names[grepl(file.names, pattern = "iter")]
-file.remove(file.names)
+invisible(file.remove(file.names))
 
 ########## ONE HOT ENCODING FUNCTIONS ########## 
 
@@ -167,6 +148,9 @@ controlAllele = function(as2control, HLA.df){
   # Get unique loci 
   lociControl = lapply(as2control, function(x) x %>% strsplit('\\*') %>% unlist() %>% .[1]) %>% unlist() %>% unique() 
   
+  # Verbose
+  if (settings$verbose) cat("Controlling for alleles: \n")
+
   # For each allele 
   alleleControl.df = data.frame(sample.id = HLA.df$sample.id)
   for (A in as2control){
@@ -176,6 +160,12 @@ controlAllele = function(as2control, HLA.df){
     allele2control = A %>% strsplit('\\*') %>% unlist() %>% .[2]
     allele1 <- paste(locus, '.1', sep = '')
     allele2 <- paste(locus, '.2', sep = '')
+
+    # Check alleles 
+    alleleCheck(HLA.df, locus, allele2control)
+
+    # Verbose
+    if (settings$verbose) cat(paste0("\t", A, "\n"))
     
     # Get subjects
     alleleControl.df[A] <- as.logical(c(HLA.df[,c(allele1)] %>% as.character() == allele2control) + 
@@ -302,25 +292,28 @@ data.cases <- HLA.df %>% filter(sample.id %in% cases.ids)
 data.controls <- HLA.df %>% filter(sample.id %in% controls.ids)
 
 # Initialize while lopp
-pval <- 0; signAlleles <- list(); 
+pval <- 0; signAlleles <- list(); a2exclude <- settings$allele2exclude %>% unlist();
 
 # HLA Loci
 loci <- colnames(HLA.df)[grepl(colnames(HLA.df), pattern = "\\.1")]
 loci <- loci %>% lapply(function(x) strsplit(x, split = "\\.") %>% unlist() %>% head(n=1)) %>% unlist() 
+
+# Create workbooks
+wb_carrier <- createWorkbook(type='xlsx')
 
 # While signifiant alleles
 idx <- 1; 
 while (pval < 0.05){
   
   # Verbose:
-  print(paste("Iteration", as.character(idx)))
+  cat(paste("Iteration", as.character(idx), "\n"))
   
   # Fit GLM to each allele of each locus
   HLA.GLM_carriers.list <- list(); pvalTotal <- c()
   for (locus in loci){
     
     # Verbose
-    print(paste("Current locus: HLA-", locus, sep = ""))
+    cat(paste("Fitting model to HLA-", locus, " \n", sep = ""))
     
     # Filter out subjects with imputation probability threshold
     probs.df_filt <- probs.df %>% filter(get(paste0("prob.", locus)) > prob_thr)
@@ -387,11 +380,20 @@ if (length(signAlleles)>1){
 # Write outcome
 for (idx in 1:length(HLA.GLM_carriers.list)){
   HLA.GLM_carriers.df <- HLA.GLM_carriers.list[[idx]]; locus <- HLA.GLM_carriers.list %>% names() %>% .[idx]
-  write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = locus, 
-             col.names = TRUE, row.names = FALSE, append = TRUE)
+  # write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = locus, 
+  #            col.names = TRUE, row.names = FALSE, append = TRUE)
+  sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
+  addDataFrame(HLA.GLM_carriers.df, sheet.carrier, startRow = 1, startColumn = 1, row.names = FALSE)
 }
-write.xlsx(x = allele, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = 'Significant_alleles', 
-           col.names = TRUE, row.names = FALSE, append = TRUE)
+# write.xlsx(x = allele, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = 'Significant_alleles', 
+#            col.names = TRUE, row.names = FALSE, append = TRUE)
+sheet.carrier <- createSheet(wb = wb_carrier, sheetName = 'Significant_alleles')
+addDataFrame(HLA.GLM_carriers.df, sheet.carrier, startRow = 1, startColumn = 1, row.names = FALSE)
+saveWorkbook(wb_carrier, file = paste0(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''))
+
+# Verbose
+if (settings$verbose) cat(paste("Outputs saved in:", settings$Output$GLM, "\n", sep=" "))
+
 
 
 
