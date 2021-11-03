@@ -235,11 +235,8 @@ runLogisticRegression = function(locus, OHE.carrierFreq.data, covars.df, as2cont
   
 }
 
-fitGLM = function(settings, locus, HLA.df, data.cases, data.controls, covars.df, as2control = NULL){
-  
-  # Control for allele
-  controlAllele.df <- controlAllele(as2control, HLA.df)
-  
+fitGLM = function(settings, locus, HLA.df, data.cases, data.controls, covars.df, controlAllele.df = NULL){
+    
   # Subset locus
   allele1 <- paste(locus, '.1',sep = '')
   allele2 <- paste(locus,'.2', sep =  '')
@@ -307,7 +304,10 @@ while (pval < 0.05){
   
   # Verbose:
   cat(paste("Iteration", as.character(idx), "\n"))
-  
+
+  # Control for allele
+  controlAllele.df <- controlAllele(as2control, HLA.df)
+
   # Fit GLM to each allele of each locus
   HLA.GLM_carriers.list <- list(); pvalTotal <- c()
   for (locus in loci){
@@ -321,7 +321,7 @@ while (pval < 0.05){
     data.controls.filt <- data.controls %>% filter(sample.id %in% probs.df_filt$sample.id)
     
     # Fit GLM
-    HLA.GLM_carriers.df <- fitGLM(settings, locus, HLA.df, data.cases, data.controls, covars.df, as2control)
+    HLA.GLM_carriers.df <- fitGLM(settings, locus, HLA.df, data.cases, data.controls, covars.df, controlAllele.df)
     
     # Filter out low frequencies
     HLA.GLM_carriers.df_filt <- HLA.GLM_carriers.df %>% filter(carrierFreqCase > freq_thr | carrierFreqControl > freq_thr)
@@ -380,15 +380,11 @@ if (length(signAlleles)>1){
 # Write outcome
 for (idx in 1:length(HLA.GLM_carriers.list)){
   HLA.GLM_carriers.df <- HLA.GLM_carriers.list[[idx]]; locus <- HLA.GLM_carriers.list %>% names() %>% .[idx]
-  # write.xlsx(x = HLA.GLM_carriers.df, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = locus, 
-  #            col.names = TRUE, row.names = FALSE, append = TRUE)
   sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
   addDataFrame(HLA.GLM_carriers.df, sheet.carrier, startRow = 1, startColumn = 1, row.names = FALSE)
 }
-# write.xlsx(x = allele, file = paste(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''), sheetName = 'Significant_alleles', 
-#            col.names = TRUE, row.names = FALSE, append = TRUE)
 sheet.carrier <- createSheet(wb = wb_carrier, sheetName = 'Significant_alleles')
-addDataFrame(HLA.GLM_carriers.df, sheet.carrier, startRow = 1, startColumn = 1, row.names = FALSE)
+addDataFrame(allele, sheet.carrier, startRow = 1, startColumn = 1, row.names = FALSE)
 saveWorkbook(wb_carrier, file = paste0(settings$Output$GLM, 'HLA_GLM_Carriers_iter','.xlsx', sep = ''))
 
 # Verbose
