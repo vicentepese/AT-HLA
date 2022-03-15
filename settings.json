@@ -30,13 +30,13 @@
 
     "ethnicity":[],
 
-    "allele2control":["DRB1*07:01"],
+    "allele2control":[],
     "allele2exclude":[],
     "skipAllele":[],
 
     "AA2control":[],
 
-    "Haplotype":["DQA1*02:01","DRB1*07:01"],
+    "Haplotype":[],
     "EM_haplo":[],
 
     "verbose":"True"
