@@ -275,7 +275,7 @@ for (locus in loci){
   # Write in workbooks
   sheet.allele <- createSheet(wb = wb_allele, sheetName = locus)
   addDataFrame(HLA.alleles.df_filt, sheet.allele, startRow = 1, startColumn = 1, row.names=FALSE)
-  sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus, row.names=FALSE)
+  sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
   addDataFrame(HLA.carriers.df_filt, sheet.carrier, startRow = 1, startColumn = 1)
 }
 
