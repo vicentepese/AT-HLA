@@ -373,7 +373,7 @@ for (locus in loci){
   sheet.allele <- createSheet(wb = wb_allele, sheetName = locus)
   addDataFrame(HLA.GLM_alleles.df_filt, sheet.allele, startRow = 1, startColumn = 1, row.names=FALSE)
   sheet.carrier <- createSheet(wb = wb_carrier, sheetName = locus)
-  addDataFrame(HLA.GLM_carriers.df_filt, sheet.carrier, startRow = 1, startColumn = 1. row.names=FALSE)
+  addDataFrame(HLA.GLM_carriers.df_filt, sheet.carrier, startRow = 1, startColumn = 1, row.names=FALSE)
 }
   
 
